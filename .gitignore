@@ -1,0 +1,16 @@
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Personal data
+data/
+
+# Generated output
+exports/
+reports/
+
+# VS Code settings (optional)
+.vscode/
