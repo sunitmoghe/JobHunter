@@ -1,5 +1,5 @@
 from modules.adzuna_api import AdzunaAPI
-
+from config.countries import COUNTRIES
 
 class UnifiedJobEngine:
 
@@ -7,17 +7,7 @@ class UnifiedJobEngine:
 
         self.adzuna = AdzunaAPI()
 
-        self.countries = {
-            "India": "in",
-            "Singapore": "sg",
-            "United Kingdom": "gb",
-            "Germany": "de",
-            "United States": "us",
-            "Australia": "au",
-            "Poland": "pl",
-            "Netherlands": "nl",
-            "New Zealand": "nz"
-        }
+        self.countries = COUNTRIES
 
     def search_jobs(
         self,

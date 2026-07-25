@@ -16,51 +16,41 @@ st.set_page_config(
 
 
 # --------------------------------------------------
-# AI EXECUTIVE JOB ENGINE
+# PAGE TITLE
 # --------------------------------------------------
 
-st.title(
-    "🔥 AI Executive Live Job Recommendations"
-)
-
+st.title("🔥 AI Executive Live Job Recommendations")
 
 st.write(
-    "Search global executive opportunities using AI Job Engine."
+    "Search global executive opportunities using the AI Executive Job Engine."
 )
 
 
-if st.button(
-    "🚀 Search Global Executive Jobs"
-):
+# --------------------------------------------------
+# SEARCH BUTTON
+# --------------------------------------------------
 
+if st.button("🚀 Search Global Executive Jobs"):
 
     with st.spinner(
-        "AI Agent searching global executive opportunities..."
+        "Searching executive opportunities across multiple countries..."
     ):
-
 
         agent = ExecutiveAIAgent()
 
         jobs = agent.search_all_roles()
 
-
-
     if jobs:
 
-
         st.success(
-            f"Found {len(jobs)} executive opportunities"
+            f"Found {len(jobs)} executive opportunities."
         )
-
 
         priority_engine = PriorityEngine()
 
-
         st.divider()
 
-
         for job in jobs[:50]:
-
 
             role = job.get(
                 "role",
@@ -70,12 +60,10 @@ if st.button(
                 )
             )
 
-
             company = job.get(
                 "company",
                 "Not Available"
             )
-
 
             country = job.get(
                 "country",
@@ -85,9 +73,8 @@ if st.button(
                 )
             )
 
-
+            # Temporary AI score
             match_score = 80
-
 
             priority = priority_engine.calculate_priority(
                 {
@@ -97,63 +84,41 @@ if st.button(
                 match_score
             )
 
-
             st.subheader(
-                f"{role} - {company}"
+                f"{role}"
             )
 
+            col1, col2 = st.columns(2)
 
-            col1, col2, col3 = st.columns(3)
+            with col1:
 
+                st.write("🏢 Company:", company)
+                st.write("🌍 Country:", country)
 
-            col1.metric(
-                "AI Match Score",
-                f"{match_score}%"
-            )
+            with col2:
 
+                st.metric(
+                    "Executive Fit",
+                    f"{match_score}%"
+                )
 
-            col2.metric(
-                "Priority Score",
-                f"{priority['priority_score']}"
-            )
-
-
-            col3.write(
-                "Category"
-            )
-
+                st.metric(
+                    "Priority Score",
+                    f"{priority['priority_score']}%"
+                )
 
             st.success(
                 priority["category"]
             )
 
+            with st.expander("View Job Details"):
 
-            st.write(
-                "🌍 Location:",
-                country
-            )
-
-
-            st.write(
-                "🏢 Company:",
-                company
-            )
-
-
-            st.write(
-                "⭐ Source:",
-                job.get(
-                    "source",
-                    "AI Search"
-                )
-            )
-
+                st.json(job)
 
             st.divider()
-
 
     else:
 
         st.warning(
-            "No executive jobs found"
+            "No executive jobs found."
         )

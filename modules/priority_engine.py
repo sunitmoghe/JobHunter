@@ -1,22 +1,18 @@
 class PriorityEngine:
 
-
     def calculate_priority(self, job, match_score):
 
         priority = match_score
-
 
         role = job.get(
             "role",
             ""
         ).lower()
 
-
         country = job.get(
             "country",
             ""
         )
-
 
         senior_roles = [
             "chief",
@@ -29,15 +25,12 @@ class PriorityEngine:
             "country manager"
         ]
 
-
         for level in senior_roles:
 
             if level in role:
 
                 priority += 10
                 break
-
-
 
         priority_countries = [
             "Singapore",
@@ -50,36 +43,31 @@ class PriorityEngine:
             "Australia"
         ]
 
-
         if country in priority_countries:
 
             priority += 5
 
-
+        priority = min(priority, 100)
 
         if priority >= 90:
 
             category = "🔥 Apply Immediately"
 
-
         elif priority >= 75:
 
-            category = "🔥 High Priority"
+            category = "⭐ High Priority"
 
-
-        else:
+        elif priority >= 60:
 
             category = "📌 Review"
 
+        else:
 
+            category = "❌ Low Fit"
 
         return {
 
-            "priority_score": min(
-                priority,
-                100
-            ),
+            "priority_score": priority,
 
             "category": category
-
         }
