@@ -9,13 +9,16 @@ from modules.profile_pipeline import process_resume
 
 from modules.job_recommendation import get_recommendations
 
+from modules.executive_ai_agent import ExecutiveAIAgent
+from modules.priority_engine import PriorityEngine
+
 from modules.application_manager import ApplicationManager
 from modules.application_analytics import ApplicationAnalytics
 
 
-# --------------------------------------------------
+# ==================================================
 # PAGE CONFIG
-# --------------------------------------------------
+# ==================================================
 
 st.set_page_config(
     page_title="Global Executive Job Hunter",
@@ -24,42 +27,51 @@ st.set_page_config(
 )
 
 
-st.title("🌍 Global Executive Job Hunter")
+st.title(
+    "🌍 Global Executive Job Hunter"
+)
 
 
-# --------------------------------------------------
+# ==================================================
 # JOB DASHBOARD
-# --------------------------------------------------
+# ==================================================
+
+st.header(
+    "📊 Executive Job Dashboard"
+)
+
 
 jobs = pd.DataFrame(
     [
-        ["Head of Sales","Google","Singapore","35 min ago"],
-        ["Country Manager","Microsoft","Germany","20 min ago"],
-        ["VP Sales","Oracle","UAE","50 min ago"],
-        ["Director Sales","SAP","Poland","15 min ago"],
-        ["Business Development Director","Amazon","UK","45 min ago"],
-        ["Chief Revenue Officer","Siemens","Saudi Arabia","30 min ago"],
+        ["Head of Sales","Google","Singapore"],
+        ["Country Manager","Microsoft","Germany"],
+        ["VP Sales","Oracle","UAE"],
+        ["Director Sales","SAP","Poland"],
+        ["Business Development Director","Amazon","UK"],
+        ["Chief Revenue Officer","Siemens","Saudi Arabia"],
     ],
     columns=[
         "Role",
         "Company",
-        "Country",
-        "Posted"
+        "Country"
     ]
 )
 
 
 c1,c2,c3 = st.columns(3)
 
+
 c1.metric(
     "Total Jobs",
     len(jobs)
 )
 
+
 c2.metric(
     "Countries",
     jobs["Country"].nunique()
 )
+
 
 c3.metric(
     "Companies",
@@ -70,19 +82,25 @@ c3.metric(
 st.divider()
 
 
-role = st.selectbox(
+selected_role = st.selectbox(
     "Select Role",
-    ["All"] + sorted(jobs["Role"].unique())
+    [
+        "All"
+    ]
+    +
+    sorted(
+        jobs["Role"].unique()
+    )
 )
 
 
 filtered_jobs = jobs.copy()
 
 
-if role != "All":
+if selected_role != "All":
 
     filtered_jobs = filtered_jobs[
-        filtered_jobs["Role"] == role
+        filtered_jobs["Role"] == selected_role
     ]
 
 
@@ -92,7 +110,7 @@ st.dataframe(
 )
 
 
-country_count = (
+chart_data = (
     filtered_jobs
     .groupby("Country")
     .size()
@@ -101,7 +119,7 @@ country_count = (
 
 
 fig = px.bar(
-    country_count,
+    chart_data,
     x="Country",
     y="Jobs",
     title="Jobs by Country"
@@ -115,22 +133,21 @@ st.plotly_chart(
 
 
 
-# --------------------------------------------------
+# ==================================================
 # RESUME INTELLIGENCE
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
 
-st.header("📄 Resume Intelligence Engine")
-
-
-uploaded_resume = st.file_uploader(
-    "Upload Resume (PDF)",
-    type=["pdf"]
+st.header(
+    "📄 Resume Intelligence Engine"
 )
 
 
-profile = None
+uploaded_resume = st.file_uploader(
+    "Upload Resume PDF",
+    type=["pdf"]
+)
 
 
 if uploaded_resume:
@@ -139,9 +156,9 @@ if uploaded_resume:
     with open(
         "temp_resume.pdf",
         "wb"
-    ) as f:
+    ) as file:
 
-        f.write(
+        file.write(
             uploaded_resume.getbuffer()
         )
 
@@ -152,12 +169,7 @@ if uploaded_resume:
 
 
     st.success(
-        "✅ Executive Profile Created and Stored"
-    )
-
-
-    st.info(
-        "🗄️ Profile saved in JobHunter database"
+        "✅ Executive Profile Created"
     )
 
 
@@ -172,31 +184,46 @@ if uploaded_resume:
     with col1:
 
         st.write(
-            "**Name:**",
-            profile["name"]
+            "Name:",
+            profile.get(
+                "name",
+                ""
+            )
         )
 
         st.write(
-            "**Email:**",
-            profile["email"]
+            "Email:",
+            profile.get(
+                "email",
+                ""
+            )
         )
 
         st.write(
-            "**Phone:**",
-            profile["phone"]
+            "Phone:",
+            profile.get(
+                "phone",
+                ""
+            )
         )
 
 
     with col2:
 
         st.write(
-            "**Experience:**",
-            profile["experience"]
+            "Experience:",
+            profile.get(
+                "experience",
+                ""
+            )
         )
 
         st.write(
-            "**LinkedIn:**",
-            profile["linkedin"]
+            "LinkedIn:",
+            profile.get(
+                "linkedin",
+                ""
+            )
         )
 
 
@@ -205,15 +232,17 @@ if uploaded_resume:
     )
 
 
-    for skill in profile["skills"]:
+    for skill in profile.get(
+        "skills",
+        []
+    ):
 
-        st.success(skill)
-
-
-
-# --------------------------------------------------
-# ATS MATCHER
-# --------------------------------------------------
+        st.success(
+            skill
+        )
+# ==================================================
+# ATS RESUME MATCHER
+# ==================================================
 
 st.divider()
 
@@ -263,7 +292,11 @@ if uploaded_resume and job_description:
             "✅ Matched Skills"
         )
 
-        for item in result["matched"]:
+
+        for item in result.get(
+            "matched",
+            []
+        ):
 
             st.success(
                 f"{item['category']} → {item['skill']}"
@@ -276,7 +309,11 @@ if uploaded_resume and job_description:
             "❌ Missing Skills"
         )
 
-        for item in result["missing"]:
+
+        for item in result.get(
+            "missing",
+            []
+        ):
 
             st.error(
                 f"{item['category']} → {item['skill']}"
@@ -284,9 +321,9 @@ if uploaded_resume and job_description:
 
 
 
-# --------------------------------------------------
+# ==================================================
 # AI JOB RECOMMENDATIONS
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
 
@@ -310,7 +347,11 @@ if recommendations:
 
 
         st.write(
-            f"🌍 Location: {job['country']}"
+            "🌍 Country:",
+            job.get(
+                "country",
+                "Global"
+            )
         )
 
 
@@ -321,7 +362,7 @@ if recommendations:
 
             st.metric(
                 "AI Match Score",
-                f"{job['score']}%"
+                f"{job.get('score',0)}%"
             )
 
 
@@ -329,12 +370,15 @@ if recommendations:
 
             st.metric(
                 "Priority Score",
-                f"{job['priority_score']}%"
+                f"{job.get('priority_score',0)}%"
             )
 
 
         st.success(
-            job["priority_category"]
+            job.get(
+                "priority_category",
+                "Review"
+            )
         )
 
 
@@ -347,7 +391,11 @@ if recommendations:
                 "✅ Matching Skills"
             )
 
-            for skill in job["matched"]:
+
+            for skill in job.get(
+                "matched",
+                []
+            ):
 
                 st.write(
                     "✓",
@@ -361,7 +409,11 @@ if recommendations:
                 "⚠ Skill Gaps"
             )
 
-            for skill in job["missing"]:
+
+            for skill in job.get(
+                "missing",
+                []
+            ):
 
                 st.write(
                     "△",
@@ -369,17 +421,20 @@ if recommendations:
                 )
 
 
+        st.divider()
+
+
 else:
 
     st.info(
-        "No recommendations available"
+        "No AI recommendations available"
     )
 
 
 
-# --------------------------------------------------
+# ==================================================
 # APPLICATION TRACKER
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
 
@@ -399,6 +454,7 @@ tab1,tab2 = st.tabs(
 )
 
 
+
 with tab1:
 
 
@@ -406,17 +462,21 @@ with tab1:
         "Company"
     )
 
+
     role = st.text_input(
         "Role"
     )
+
 
     country = st.text_input(
         "Country"
     )
 
+
     location = st.text_input(
         "Location"
     )
+
 
     status = st.selectbox(
         "Status",
@@ -478,12 +538,177 @@ with tab2:
         st.info(
             "No applications yet"
         )
+# ==================================================
+# LIVE GLOBAL EXECUTIVE JOB SEARCH
+# ==================================================
+
+st.divider()
+
+st.header(
+    "🌍 Live Global Executive Job Search"
+)
+
+
+if st.button(
+    "🚀 Search Global Executive Jobs"
+):
+
+
+    with st.spinner(
+        "AI Agent searching executive opportunities..."
+    ):
+
+
+        agent = ExecutiveAIAgent()
+
+        executive_jobs = (
+            agent.search_all_roles()
+        )
+
+
+    if executive_jobs:
+
+
+        st.success(
+            f"Found {len(executive_jobs)} executive jobs"
+        )
+
+
+        priority_engine = PriorityEngine()
+
+
+        for job in executive_jobs[:25]:
+
+
+            role = job.get(
+                "role",
+                job.get(
+                    "title",
+                    "Executive Role"
+                )
+            )
+
+
+            company = job.get(
+                "company",
+                "Not Available"
+            )
+
+
+            country = job.get(
+                "country",
+                job.get(
+                    "location",
+                    "Global"
+                )
+            )
+
+
+            match_score = 80
+
+
+            priority = priority_engine.calculate_priority(
+                {
+                    "role": role,
+                    "country": country
+                },
+                match_score
+            )
+
+
+            st.subheader(
+                f"{role} - {company}"
+            )
+
+
+            col1,col2 = st.columns(2)
+
+
+            with col1:
+
+
+                st.metric(
+                    "AI Match Score",
+                    f"{match_score}%"
+                )
+
+
+            with col2:
+
+
+                st.metric(
+                    "Priority Score",
+                    f"{priority['priority_score']}%"
+                )
+
+
+            category = priority.get(
+                "category",
+                "Review"
+            )
+
+
+            if "Apply" in category:
+
+
+                st.success(
+                    "🔥 Apply Immediately"
+                )
+
+
+            elif "High" in category:
+
+
+                st.warning(
+                    "🔥 High Priority"
+                )
+
+
+            else:
+
+
+                st.info(
+                    "📌 Review"
+                )
+
+
+            st.write(
+                "🏢 Company:",
+                company
+            )
+
+
+            st.write(
+                "🌍 Location:",
+                country
+            )
+
+
+            st.write(
+                "⭐ Source:",
+                job.get(
+                    "source",
+                    "AI Search"
+                )
+            )
+
+
+            st.divider()
 
 
 
-# --------------------------------------------------
-# ANALYTICS
-# --------------------------------------------------
+    else:
+
+
+        st.warning(
+            "No executive jobs found"
+        )
+
+
+
+# ==================================================
+# ANALYTICS DASHBOARD
+# ==================================================
 
 st.divider()
 
@@ -502,14 +727,20 @@ c1,c2,c3,c4 = st.columns(4)
 
 
 c1.metric(
-    "Total",
-    summary["total"]
+    "Total Applications",
+    summary.get(
+        "total",
+        0
+    )
 )
 
 
 c2.metric(
     "Applied",
-    summary["statuses"].get(
+    summary.get(
+        "statuses",
+        {}
+    ).get(
         "Applied",
         0
     )
@@ -518,7 +749,10 @@ c2.metric(
 
 c3.metric(
     "Interview",
-    summary["statuses"].get(
+    summary.get(
+        "statuses",
+        {}
+    ).get(
         "Interview",
         0
     )
@@ -527,14 +761,20 @@ c3.metric(
 
 c4.metric(
     "Offers",
-    summary["statuses"].get(
+    summary.get(
+        "statuses",
+        {}
+    ).get(
         "Offer",
         0
     )
 )
 
 
-if summary["statuses"]:
+
+if summary.get(
+    "statuses"
+):
 
 
     chart = pd.DataFrame(
