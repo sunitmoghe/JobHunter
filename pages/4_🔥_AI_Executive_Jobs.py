@@ -2,6 +2,7 @@ import streamlit as st
 
 from modules.executive_ai_agent import ExecutiveAIAgent
 from modules.priority_engine import PriorityEngine
+from modules.executive_scoring_engine import ExecutiveScoringEngine
 
 
 # --------------------------------------------------
@@ -27,7 +28,7 @@ st.write(
 
 
 # --------------------------------------------------
-# SEARCH BUTTON
+# SEARCH
 # --------------------------------------------------
 
 if st.button("🚀 Search Global Executive Jobs"):
@@ -47,6 +48,7 @@ if st.button("🚀 Search Global Executive Jobs"):
         )
 
         priority_engine = PriorityEngine()
+        scoring_engine = ExecutiveScoringEngine()
 
         st.divider()
 
@@ -73,33 +75,44 @@ if st.button("🚀 Search Global Executive Jobs"):
                 )
             )
 
-            # Temporary AI score
-            match_score = 80
+            score = scoring_engine.calculate_score(
+                {
+                    "role": role,
+                    "country": country
+                },
+                ats_score=80,
+                experience_years=23
+            )
 
             priority = priority_engine.calculate_priority(
                 {
                     "role": role,
                     "country": country
                 },
-                match_score
+                score["executive_fit"]
             )
 
-            st.subheader(
-                f"{role}"
-            )
+            st.subheader(role)
 
             col1, col2 = st.columns(2)
 
             with col1:
 
-                st.write("🏢 Company:", company)
-                st.write("🌍 Country:", country)
+                st.write(
+                    "🏢 Company:",
+                    company
+                )
+
+                st.write(
+                    "🌍 Country:",
+                    country
+                )
 
             with col2:
 
                 st.metric(
                     "Executive Fit",
-                    f"{match_score}%"
+                    f"{score['executive_fit']}%"
                 )
 
                 st.metric(
@@ -110,6 +123,32 @@ if st.button("🚀 Search Global Executive Jobs"):
             st.success(
                 priority["category"]
             )
+
+            with st.expander("📊 Executive Score Breakdown"):
+
+                st.write(
+                    f"ATS Score: {score['ats_score']}%"
+                )
+
+                st.write(
+                    f"Leadership Score: {score['leadership_score']}%"
+                )
+
+                st.write(
+                    f"Experience Score: {score['experience_score']}%"
+                )
+
+                st.write(
+                    f"Country Score: {score['country_score']}%"
+                )
+
+                st.write(
+                    f"Industry Score: {score['industry_score']}%"
+                )
+
+                st.write(
+                    f"Role Score: {score['role_score']}%"
+                )
 
             with st.expander("View Job Details"):
 
