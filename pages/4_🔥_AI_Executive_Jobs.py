@@ -5,11 +5,8 @@ from modules.priority_engine import PriorityEngine
 from modules.executive_scoring_engine import ExecutiveScoringEngine
 from modules.profile_manager import ProfileManager
 from modules.job_skill_matcher import JobSkillMatcher
+from modules.resume_tailor_engine import ResumeTailorEngine
 
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
 
 st.set_page_config(
     page_title="AI Executive Jobs",
@@ -17,10 +14,6 @@ st.set_page_config(
     layout="wide"
 )
 
-
-# --------------------------------------------------
-# PAGE TITLE
-# --------------------------------------------------
 
 st.title(
     "🔥 AI Executive Live Job Recommendations"
@@ -30,10 +23,6 @@ st.write(
     "Search global executive opportunities using the AI Executive Job Engine."
 )
 
-
-# --------------------------------------------------
-# PROFILE CHECK
-# --------------------------------------------------
 
 profile_manager = ProfileManager()
 
@@ -50,16 +39,12 @@ else:
     )
 
 
-# --------------------------------------------------
-# SEARCH
-# --------------------------------------------------
-
 if st.button(
     "🚀 Search Global Executive Jobs"
 ):
 
     with st.spinner(
-        "Searching executive opportunities across multiple countries..."
+        "Searching executive opportunities..."
     ):
 
         agent = ExecutiveAIAgent()
@@ -80,19 +65,14 @@ if st.button(
 
         skill_matcher = JobSkillMatcher()
 
-
-        st.divider()
+        resume_tailor = ResumeTailorEngine()
 
 
         for job in jobs[:50]:
 
-
             role = job.get(
                 "role",
-                job.get(
-                    "title",
-                    "Executive Role"
-                )
+                "Executive Role"
             )
 
 
@@ -104,10 +84,7 @@ if st.button(
 
             country = job.get(
                 "country",
-                job.get(
-                    "location",
-                    "Not Available"
-                )
+                "Not Available"
             )
 
 
@@ -135,10 +112,6 @@ if st.button(
 
 
 
-            # -------------------------------
-            # EXECUTIVE SCORING
-            # -------------------------------
-
             score = scoring_engine.calculate_score(
 
                 {
@@ -149,30 +122,6 @@ if st.button(
                 ats_score=80,
 
                 experience_years=experience
-            )
-
-
-
-            # -------------------------------
-            # SKILL ANALYSIS
-            # -------------------------------
-
-            job_analysis = skill_matcher.extract_matching_skills(
-
-                profile.get(
-                    "skills",
-                    []
-                ),
-
-                description
-            )
-
-
-
-            interview_probability = (
-                skill_matcher.interview_probability(
-                    score["executive_fit"]
-                )
             )
 
 
@@ -189,9 +138,45 @@ if st.button(
 
 
 
-            # -------------------------------
-            # DISPLAY JOB
-            # -------------------------------
+            job_analysis = skill_matcher.extract_matching_skills(
+
+                profile.get(
+                    "skills",
+                    []
+                ),
+
+                description
+            )
+
+
+
+            interview_probability = skill_matcher.interview_probability(
+
+                score["executive_fit"]
+
+            )
+
+
+
+            resume_analysis = resume_tailor.analyze_job_fit(
+
+                profile,
+
+                job
+
+            )
+
+
+
+            tailored_summary = resume_tailor.generate_executive_summary(
+
+                profile,
+
+                job
+
+            )
+
+
 
             st.subheader(
                 role
@@ -221,6 +206,11 @@ if st.button(
                     f"{score['executive_fit']}%"
                 )
 
+                st.metric(
+                    "Priority Score",
+                    f"{priority['priority_score']}%"
+                )
+
 
             with col3:
 
@@ -237,104 +227,76 @@ if st.button(
 
 
 
-            st.metric(
-                "Priority Score",
-                f"{priority['priority_score']}%"
-            )
-
-
-
-            # -------------------------------
-            # AI SKILL ANALYSIS
-            # -------------------------------
-
             with st.expander(
                 "🧠 AI Skill Analysis"
             ):
 
-
                 st.write(
-                    "### ✅ Matching Skills"
+                    "### Matching Skills"
                 )
 
 
-                if job_analysis["matched"]:
-
-
-                    for skill in job_analysis["matched"]:
-
-                        st.success(
-                            skill
-                        )
-
-
-                else:
-
-                    st.info(
-                        "No matching skills identified."
-                    )
-
-
-
-                st.write(
-                    "### ⚠ Missing Keywords"
-                )
-
-
-                if job_analysis["missing"]:
-
-
-                    for keyword in job_analysis["missing"][:10]:
-
-                        st.warning(
-                            keyword
-                        )
-
-
-                else:
+                for skill in job_analysis.get(
+                    "matched",
+                    []
+                ):
 
                     st.success(
-                        "No major keyword gaps detected."
+                        skill
+                    )
+
+
+                st.write(
+                    "### Missing Keywords"
+                )
+
+
+                for skill in job_analysis.get(
+                    "missing",
+                    []
+                ):
+
+                    st.warning(
+                        skill
                     )
 
 
 
-            # -------------------------------
-            # SCORE BREAKDOWN
-            # -------------------------------
+            with st.expander(
+                "✨ AI Resume Tailoring"
+            ):
+
+                st.metric(
+                    "Resume Match Score",
+                    f"{resume_analysis['match_score']}%"
+                )
+
+
+                st.write(
+                    "### Tailored Executive Summary"
+                )
+
+
+                st.info(
+                    tailored_summary
+                )
+
+
 
             with st.expander(
                 "📊 Executive Score Breakdown"
             ):
 
-
                 st.write(
                     f"ATS Score: {score['ats_score']}%"
                 )
-
 
                 st.write(
                     f"Leadership Score: {score['leadership_score']}%"
                 )
 
-
                 st.write(
                     f"Experience Score: {score['experience_score']}%"
-                )
-
-
-                st.write(
-                    f"Country Score: {score['country_score']}%"
-                )
-
-
-                st.write(
-                    f"Industry Score: {score['industry_score']}%"
-                )
-
-
-                st.write(
-                    f"Role Score: {score['role_score']}%"
                 )
 
 
@@ -351,9 +313,7 @@ if st.button(
             st.divider()
 
 
-
     else:
-
 
         st.warning(
             "No executive jobs found."
