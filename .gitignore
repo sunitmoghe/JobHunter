@@ -1,17 +1,42 @@
-# Python virtual environment
+# -----------------------------
+# Python Virtual Environment
+# -----------------------------
 .venv/
 
-# Python cache
+# -----------------------------
+# Python Cache
+# -----------------------------
 __pycache__/
 *.pyc
 
-# Personal data
-data/
+# -----------------------------
+# VS Code
+# -----------------------------
+.vscode/
 
-# Generated output
+# -----------------------------
+# SQLite Database
+# -----------------------------
+database/*.db
+
+# -----------------------------
+# Temporary Files
+# -----------------------------
+temp_resume.pdf
+
+# -----------------------------
+# Generated Reports
+# -----------------------------
 exports/
 reports/
 
-# VS Code settings (optional)
-.vscode/
-temp_resume.pdf
+# -----------------------------
+# User Data
+# -----------------------------
+data/
+
+# -----------------------------
+# Operating System Files
+# -----------------------------
+.DS_Store
+Thumbs.db
