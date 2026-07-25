@@ -1,0 +1,29 @@
+{
+    "Leadership": [
+        "leadership",
+        "team management",
+        "people management",
+        "stakeholder management",
+        "executive leadership",
+        "p&l"
+    ],
+
+    "Revenue Growth": [
+        "revenue growth",
+        "sales growth",
+        "business growth",
+        "arr growth"
+    ],
+
+    "SaaS": [
+        "saas",
+        "software as a service",
+        "cloud software"
+    ],
+
+    "CRM": [
+        "crm",
+        "salesforce",
+        "customer relationship management"
+    ]
+}
