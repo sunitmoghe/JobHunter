@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+from modules.resume_parser import ResumeParser
+from modules.ats_matcher import ATSMatcher
+from modules.profile_pipeline import process_resume
+
 st.set_page_config(
     page_title="Global Executive Job Hunter",
     page_icon="🌍",
@@ -53,9 +57,6 @@ fig = px.bar(
 )
 
 st.plotly_chart(fig, use_container_width=True)
-from modules.resume_parser import ResumeParser
-from modules.ats_matcher import ATSMatcher
-st.divider()
 
 st.header("📄 ATS Resume Matcher")
 
@@ -63,6 +64,73 @@ uploaded_resume = st.file_uploader(
     "Upload Resume (PDF)",
     type=["pdf"]
 )
+
+if uploaded_resume:
+
+    with open("temp_resume.pdf", "wb") as f:
+        f.write(uploaded_resume.getbuffer())
+
+
+    # Build Executive Profile
+    profile = process_resume(
+        "temp_resume.pdf"
+    )
+
+
+    st.success(
+        "✅ Executive Profile Created and Stored"
+    )
+
+    st.info(
+        "🗄️ Profile saved in JobHunter database"
+    )
+
+    st.divider()
+
+    st.header("👤 Executive Profile")
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        st.write(
+            "**Name:**",
+            profile["name"]
+        )
+
+        st.write(
+            "**Email:**",
+            profile["email"]
+        )
+
+        st.write(
+            "**Phone:**",
+            profile["phone"]
+        )
+
+
+    with col2:
+
+        st.write(
+            "**Experience:**",
+            profile["experience"]
+        )
+
+        st.write(
+            "**LinkedIn:**",
+            profile["linkedin"]
+        )
+
+
+    st.subheader("🛠 Skills Detected")
+
+    for skill in profile["skills"]:
+        st.success(skill)
+
+
+st.divider()
+
 
 job_description = st.text_area(
     "Paste Job Description",
@@ -93,9 +161,19 @@ if uploaded_resume and job_description:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("✅ Matched")
-        st.write(result["matched"])
+        st.subheader("✅ Matched Skills")
+
+        if result["matched"]:
+            for item in result["matched"]:
+                st.success(f"{item['category']} → {item['skill']}")
+        else:
+            st.info("No matching skills found.")
 
     with col2:
-        st.subheader("❌ Missing")
-        st.write(result["missing"])
+        st.subheader("❌ Missing Skills")
+
+        if result["missing"]:
+            for item in result["missing"]:
+                st.error(f"{item['category']} → {item['skill']}")
+        else:
+            st.success("No missing skills.")

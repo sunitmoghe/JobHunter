@@ -1,0 +1,66 @@
+{
+  "Sales": [
+    "Business Development",
+    "Strategic Sales",
+    "Enterprise Sales",
+    "Solution Selling",
+    "Consultative Selling",
+    "Key Account Management",
+    "Channel Sales",
+    "Partner Management",
+    "Revenue Growth",
+    "Sales Strategy",
+    "Pipeline Management",
+    "Sales Forecasting",
+    "Territory Management",
+    "Go-to-Market",
+    "Customer Acquisition"
+  ],
+
+  "Leadership": [
+    "Executive Leadership",
+    "P&L",
+    "Shared Services",
+    "Operations",
+    "Business Transformation",
+    "Change Management",
+    "Stakeholder Management",
+    "Cross-functional Leadership",
+    "Organizational Development",
+    "People Management"
+  ],
+
+  "Technology": [
+    "CRM",
+    "Salesforce",
+    "HubSpot",
+    "SAP",
+    "ERP",
+    "SaaS",
+    "Cloud",
+    "AI",
+    "Automation",
+    "Analytics",
+    "IoT",
+    "Industrial Automation"
+  ],
+
+  "Customer": [
+    "Customer Success",
+    "Customer Experience",
+    "Customer Service",
+    "Customer Retention",
+    "NPS",
+    "CSAT",
+    "Service Delivery"
+  ],
+
+  "Finance": [
+    "Budgeting",
+    "Forecasting",
+    "Cost Optimization",
+    "Financial Planning",
+    "Profitability",
+    "Revenue Management"
+  ]
+}
