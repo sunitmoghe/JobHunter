@@ -1,0 +1,12 @@
+[
+    {
+        "name": "John Smith",
+        "company": "Microsoft",
+        "role": "Talent Acquisition Director",
+        "linkedin": "https://linkedin.com/in/example",
+        "email": "john@example.com",
+        "status": "New",
+        "last_contact": "2026-07-26",
+        "notes": ""
+    }
+]

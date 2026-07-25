@@ -7,6 +7,7 @@ from modules.profile_manager import ProfileManager
 from modules.job_skill_matcher import JobSkillMatcher
 from modules.resume_tailor_engine import ResumeTailorEngine
 from modules.application_assistant import ApplicationAssistant
+from modules.application_tracker import ApplicationTracker
 
 
 st.set_page_config(
@@ -69,6 +70,8 @@ if st.button(
         resume_tailor = ResumeTailorEngine()
         
         application_assistant = ApplicationAssistant()        
+
+        application_tracker = ApplicationTracker()
 
         for job in jobs[:50]:
 
@@ -240,7 +243,22 @@ if st.button(
             st.success(
                 priority["category"]
             )
+            
 
+            if st.button(
+                "📌 Save Application",
+                key=f"save_{company}_{role}"
+            ):
+
+                application_tracker.add_application(
+                    job,
+                    priority["priority_score"],
+                    interview_probability
+                )
+
+                st.success(
+                    "✅ Application saved to CRM"
+                )
 
 
             with st.expander(
