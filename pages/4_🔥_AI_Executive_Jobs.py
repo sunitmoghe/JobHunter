@@ -6,6 +6,7 @@ from modules.executive_scoring_engine import ExecutiveScoringEngine
 from modules.profile_manager import ProfileManager
 from modules.job_skill_matcher import JobSkillMatcher
 from modules.resume_tailor_engine import ResumeTailorEngine
+from modules.application_assistant import ApplicationAssistant
 
 
 st.set_page_config(
@@ -66,7 +67,8 @@ if st.button(
         skill_matcher = JobSkillMatcher()
 
         resume_tailor = ResumeTailorEngine()
-
+        
+        application_assistant = ApplicationAssistant()        
 
         for job in jobs[:50]:
 
@@ -176,7 +178,21 @@ if st.button(
 
             )
 
+            linkedin_message = application_assistant.generate_linkedin_message(
+                profile,
+                job
+            )
 
+
+            cover_letter = application_assistant.generate_cover_letter(
+                profile,
+                job
+            )
+
+
+            interview_questions = application_assistant.generate_interview_questions(
+                job
+            )
 
             st.subheader(
                 role
@@ -299,7 +315,50 @@ if st.button(
                     f"Experience Score: {score['experience_score']}%"
                 )
 
+            with st.expander(
+                "✉️ AI Application Assistant"
+            ):
 
+                tab1, tab2, tab3 = st.tabs(
+                    [
+                        "LinkedIn Message",
+                        "Cover Letter",
+                        "Interview Preparation"
+                    ]
+                )
+
+
+                with tab1:
+
+                    st.text_area(
+                        "Recruiter LinkedIn Message",
+                        linkedin_message,
+                        height=250
+                    )
+
+
+                with tab2:
+
+                    st.text_area(
+                        "Executive Cover Letter",
+                        cover_letter,
+                        height=350
+                    )
+
+
+                with tab3:
+
+                    st.write(
+                        "### 🎯 Interview Questions"
+                    )
+
+
+                    for question in interview_questions:
+
+                        st.write(
+                            "•",
+                            question
+                        )
 
             with st.expander(
                 "📄 View Job Details"
