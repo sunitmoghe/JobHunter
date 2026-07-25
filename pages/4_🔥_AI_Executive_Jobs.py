@@ -3,6 +3,7 @@ import streamlit as st
 from modules.executive_ai_agent import ExecutiveAIAgent
 from modules.priority_engine import PriorityEngine
 from modules.executive_scoring_engine import ExecutiveScoringEngine
+from modules.profile_manager import ProfileManager
 
 
 # --------------------------------------------------
@@ -49,6 +50,19 @@ if st.button("🚀 Search Global Executive Jobs"):
 
         priority_engine = PriorityEngine()
         scoring_engine = ExecutiveScoringEngine()
+        profile_manager = ProfileManager()
+	
+        if profile_manager.profile_exists():
+
+            st.success("✅ Executive profile loaded.")
+
+        else:
+
+            st.warning(
+                "No executive profile found. Please analyse your resume first."
+            )	
+
+        profile = profile_manager.load_profile()
 
         st.divider()
 
@@ -74,6 +88,13 @@ if st.button("🚀 Search Global Executive Jobs"):
                     "Not Available"
                 )
             )
+
+            experience = profile.get("experience", 20)
+
+            try:
+                experience = int(experience)
+            except Exception:
+                experience = 20
 
             score = scoring_engine.calculate_score(
                 {

@@ -2,6 +2,7 @@ import streamlit as st
 
 from modules.profile_pipeline import process_resume
 from modules.ai_resume_intelligence import AIResumeIntelligence
+from modules.profile_manager import ProfileManager
 
 
 # --------------------------------------------------
@@ -23,11 +24,9 @@ st.title(
     "📄 Resume Intelligence Engine"
 )
 
-
 st.write(
     "Upload your resume and generate your Executive Profile."
 )
-
 
 uploaded_resume = st.file_uploader(
     "Upload Resume (PDF)",
@@ -36,7 +35,6 @@ uploaded_resume = st.file_uploader(
 
 
 if uploaded_resume:
-
 
     with open(
         "temp_resume.pdf",
@@ -47,7 +45,6 @@ if uploaded_resume:
             uploaded_resume.getbuffer()
         )
 
-
     with st.spinner(
         "Analysing resume and creating executive profile..."
     ):
@@ -56,14 +53,25 @@ if uploaded_resume:
             "temp_resume.pdf"
         )
 
+        # --------------------------------------------
+        # SAVE PROFILE FOR ENTIRE APPLICATION
+        # --------------------------------------------
+
+        profile_manager = ProfileManager()
+
+        profile_manager.save_profile(
+            profile
+        )
 
     st.success(
         "✅ Executive Profile Created Successfully"
     )
 
+    st.info(
+        "💾 Executive profile saved successfully for all JobHunter modules."
+    )
 
     st.divider()
-
 
     # --------------------------------------------------
     # EXECUTIVE PROFILE
@@ -73,9 +81,7 @@ if uploaded_resume:
         "👤 Executive Profile"
     )
 
-
     col1, col2 = st.columns(2)
-
 
     with col1:
 
@@ -87,7 +93,6 @@ if uploaded_resume:
             )
         )
 
-
         st.write(
             "**Email:**",
             profile.get(
@@ -95,7 +100,6 @@ if uploaded_resume:
                 "Not Available"
             )
         )
-
 
         st.write(
             "**Phone:**",
@@ -105,7 +109,6 @@ if uploaded_resume:
             )
         )
 
-
         st.write(
             "**Experience:**",
             profile.get(
@@ -113,7 +116,6 @@ if uploaded_resume:
                 "Not Available"
             )
         )
-
 
     with col2:
 
@@ -125,7 +127,6 @@ if uploaded_resume:
             )
         )
 
-
         st.write(
             "**Location:**",
             profile.get(
@@ -133,7 +134,6 @@ if uploaded_resume:
                 "Not Available"
             )
         )
-
 
         st.write(
             "**Current Role:**",
@@ -143,7 +143,6 @@ if uploaded_resume:
             )
         )
 
-
         st.write(
             "**Industry:**",
             profile.get(
@@ -152,9 +151,7 @@ if uploaded_resume:
             )
         )
 
-
     st.divider()
-
 
     # --------------------------------------------------
     # SKILLS
@@ -164,12 +161,10 @@ if uploaded_resume:
         "🛠 Skills Detected"
     )
 
-
     skills = profile.get(
         "skills",
         []
     )
-
 
     if skills:
 
@@ -185,9 +180,7 @@ if uploaded_resume:
             "No skills detected"
         )
 
-
     st.divider()
-
 
     # --------------------------------------------------
     # AI RESUME INTELLIGENCE
@@ -197,36 +190,28 @@ if uploaded_resume:
         "🧠 AI Executive Intelligence"
     )
 
-
     ai_engine = AIResumeIntelligence()
-
 
     ai_analysis = ai_engine.analyze_profile(
         profile
     )
-
 
     st.metric(
         "🎯 Executive Positioning Score",
         f"{ai_analysis['positioning_score']}%"
     )
 
-
     st.divider()
-
 
     st.subheader(
         "📝 Executive Summary"
     )
 
-
     st.info(
         ai_analysis["executive_summary"]
     )
 
-
     col1, col2 = st.columns(2)
-
 
     with col1:
 
@@ -234,20 +219,17 @@ if uploaded_resume:
             "💪 Leadership Strengths"
         )
 
-
         for item in ai_analysis["leadership_strengths"]:
 
             st.success(
                 item
             )
 
-
     with col2:
 
         st.subheader(
             "🚀 Recommended Executive Roles"
         )
-
 
         for role in ai_analysis["recommended_roles"]:
 
@@ -256,14 +238,11 @@ if uploaded_resume:
                 role
             )
 
-
     st.divider()
-
 
     st.subheader(
         "⚠ Keyword Improvement Areas"
     )
-
 
     for keyword in ai_analysis["keyword_gaps"]:
 
@@ -271,19 +250,15 @@ if uploaded_resume:
             keyword
         )
 
-
     st.divider()
-
 
     st.subheader(
         "📊 Complete Profile Data"
     )
 
-
     st.json(
         profile
     )
-
 
 else:
 
