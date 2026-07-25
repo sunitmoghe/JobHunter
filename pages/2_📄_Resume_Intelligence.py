@@ -1,6 +1,7 @@
 import streamlit as st
 
 from modules.profile_pipeline import process_resume
+from modules.ai_resume_intelligence import AIResumeIntelligence
 
 
 # --------------------------------------------------
@@ -63,6 +64,10 @@ if uploaded_resume:
 
     st.divider()
 
+
+    # --------------------------------------------------
+    # EXECUTIVE PROFILE
+    # --------------------------------------------------
 
     st.subheader(
         "👤 Executive Profile"
@@ -151,6 +156,10 @@ if uploaded_resume:
     st.divider()
 
 
+    # --------------------------------------------------
+    # SKILLS
+    # --------------------------------------------------
+
     st.subheader(
         "🛠 Skills Detected"
     )
@@ -180,8 +189,94 @@ if uploaded_resume:
     st.divider()
 
 
+    # --------------------------------------------------
+    # AI RESUME INTELLIGENCE
+    # --------------------------------------------------
+
     st.subheader(
-        "📊 Profile Summary"
+        "🧠 AI Executive Intelligence"
+    )
+
+
+    ai_engine = AIResumeIntelligence()
+
+
+    ai_analysis = ai_engine.analyze_profile(
+        profile
+    )
+
+
+    st.metric(
+        "🎯 Executive Positioning Score",
+        f"{ai_analysis['positioning_score']}%"
+    )
+
+
+    st.divider()
+
+
+    st.subheader(
+        "📝 Executive Summary"
+    )
+
+
+    st.info(
+        ai_analysis["executive_summary"]
+    )
+
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        st.subheader(
+            "💪 Leadership Strengths"
+        )
+
+
+        for item in ai_analysis["leadership_strengths"]:
+
+            st.success(
+                item
+            )
+
+
+    with col2:
+
+        st.subheader(
+            "🚀 Recommended Executive Roles"
+        )
+
+
+        for role in ai_analysis["recommended_roles"]:
+
+            st.write(
+                "🔥",
+                role
+            )
+
+
+    st.divider()
+
+
+    st.subheader(
+        "⚠ Keyword Improvement Areas"
+    )
+
+
+    for keyword in ai_analysis["keyword_gaps"]:
+
+        st.warning(
+            keyword
+        )
+
+
+    st.divider()
+
+
+    st.subheader(
+        "📊 Complete Profile Data"
     )
 
 
