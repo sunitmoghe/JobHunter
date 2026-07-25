@@ -9,31 +9,39 @@ from modules.ats_matcher import ATSMatcher
 # --------------------------------------------------
 
 st.set_page_config(
-    page_title="ATS Matcher",
+    page_title="AI ATS Matcher",
     page_icon="🎯",
     layout="wide"
 )
 
 
 # --------------------------------------------------
-# ATS MATCHER
+# ATS MATCHER PAGE
 # --------------------------------------------------
 
 st.title(
-    "🎯 ATS Resume Matcher"
+    "🎯 AI ATS Resume Matcher"
 )
 
 
 st.write(
-    "Compare your resume against any job description."
+    "Upload your resume and compare it with any job description."
 )
 
 
+# --------------------------------------------------
+# RESUME UPLOAD
+# --------------------------------------------------
+
 uploaded_resume = st.file_uploader(
-    "Upload Resume (PDF)",
+    "Upload Resume PDF",
     type=["pdf"]
 )
 
+
+# --------------------------------------------------
+# JOB DESCRIPTION
+# --------------------------------------------------
 
 job_description = st.text_area(
     "Paste Job Description",
@@ -41,11 +49,16 @@ job_description = st.text_area(
 )
 
 
+
+# --------------------------------------------------
+# ANALYSIS
+# --------------------------------------------------
+
 if uploaded_resume and job_description:
 
 
     with open(
-        "temp_resume.pdf",
+        "temp_ats_resume.pdf",
         "wb"
     ) as f:
 
@@ -54,115 +67,198 @@ if uploaded_resume and job_description:
         )
 
 
-    with st.spinner(
-        "Calculating ATS match score..."
-    ):
-
-
-        parser = ResumeParser(
-            "temp_resume.pdf"
-        )
-
-
-        resume_text = parser.read_resume()
-
-
-        matcher = ATSMatcher(
-            resume_text,
-            job_description
-        )
-
-
-        result = matcher.calculate_match()
-
-
-    st.success(
-        "✅ ATS Analysis Completed"
+    parser = ResumeParser(
+        "temp_ats_resume.pdf"
     )
 
 
+    resume_text = parser.read_resume()
+
+
+
+    matcher = ATSMatcher(
+        resume_text,
+        job_description
+    )
+
+
+    result = matcher.calculate_match()
+
+
+
     st.divider()
+
+
+    # --------------------------------------------------
+    # ATS SCORE
+    # --------------------------------------------------
+
+    st.header(
+        "🎯 ATS Compatibility Analysis"
+    )
 
 
     col1, col2, col3 = st.columns(3)
 
 
-    col1.metric(
-        "ATS Match Score",
-        f"{result.get('score',0)}%"
-    )
+    with col1:
+
+        st.metric(
+            "ATS Match Score",
+            f"{result['score']}%"
+        )
 
 
-    col2.metric(
-        "Matched Skills",
-        len(result.get("matched", []))
-    )
+    with col2:
+
+        st.metric(
+            "🔥 Interview Probability",
+            f"{result.get('interview_probability',0)}%"
+        )
 
 
-    col3.metric(
-        "Missing Skills",
-        len(result.get("missing", []))
-    )
+    with col3:
+
+        readiness = (
+
+            "High"
+
+            if result.get(
+                "interview_probability",
+                0
+            ) >= 80
+
+            else "Medium"
+
+        )
+
+
+        st.metric(
+            "🤖 AI Readiness",
+            readiness
+        )
+
 
 
     st.divider()
 
 
-    left, right = st.columns(2)
+
+    # --------------------------------------------------
+    # MATCHED SKILLS
+    # --------------------------------------------------
+
+    col1, col2 = st.columns(2)
 
 
-    with left:
+    with col1:
 
         st.subheader(
-            "✅ Matching Skills"
+            "✅ Matched Skills"
         )
 
 
-        for item in result.get(
-            "matched",
-            []
-        ):
+        if result["matched"]:
 
-            if isinstance(item, dict):
+            for item in result["matched"]:
 
                 st.success(
-                    f"{item.get('category')} → {item.get('skill')}"
+                    f"{item['category']} → {item['skill']}"
                 )
 
-            else:
+        else:
 
-                st.success(
-                    item
-                )
+            st.info(
+                "No matching skills found"
+            )
 
 
-    with right:
+
+    # --------------------------------------------------
+    # MISSING SKILLS
+    # --------------------------------------------------
+
+    with col2:
 
         st.subheader(
-            "❌ Skill Gaps"
+            "⚠ Missing Keywords"
         )
 
 
-        for item in result.get(
-            "missing",
-            []
-        ):
+        if result["missing"]:
 
-            if isinstance(item, dict):
+            for item in result["missing"]:
 
                 st.error(
-                    f"{item.get('category')} → {item.get('skill')}"
+                    f"{item['category']} → {item['skill']}"
                 )
 
-            else:
+        else:
 
-                st.error(
-                    item
-                )
+            st.success(
+                "No major keyword gaps found"
+            )
+
+
+
+    st.divider()
+
+
+
+    # --------------------------------------------------
+    # AI RECOMMENDATIONS
+    # --------------------------------------------------
+
+    st.header(
+        "📝 AI Resume Improvement Recommendations"
+    )
+
+
+    recommendations = result.get(
+        "recommendations",
+        []
+    )
+
+
+    if recommendations:
+
+
+        for item in recommendations:
+
+            st.warning(
+                item
+            )
+
+
+    else:
+
+        st.success(
+            "Your resume already aligns strongly with this role."
+        )
+
+
+
+    st.divider()
+
+
+
+    # --------------------------------------------------
+    # RAW ANALYSIS
+    # --------------------------------------------------
+
+    with st.expander(
+        "View Complete ATS Analysis"
+    ):
+
+        st.json(
+            result
+        )
+
 
 
 else:
 
+
     st.info(
-        "Upload resume and paste job description to start ATS analysis."
+        "Please upload resume PDF and paste job description to start ATS analysis."
     )
