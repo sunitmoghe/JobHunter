@@ -1,7 +1,18 @@
 import streamlit as st
+import pandas as pd
 
 from modules.market_analytics import MarketAnalytics
 from modules.salary_intelligence import SalaryIntelligence
+
+from modules.ui_components import (
+    page_header,
+    section_header,
+    metric_row,
+    success_box,
+    warning_box,
+    info_box,
+    divider,
+)
 
 
 # --------------------------------------------------
@@ -16,17 +27,13 @@ st.set_page_config(
 
 
 # --------------------------------------------------
-# TITLE
+# HEADER
 # --------------------------------------------------
 
-st.title(
-    "🌍 Executive Market Intelligence Dashboard"
+page_header(
+    "🌍 Executive Market Intelligence Dashboard",
+    "Global executive opportunities, demand trends and compensation intelligence."
 )
-
-st.write(
-    "Analyse global executive opportunities, demand trends and compensation intelligence."
-)
-
 
 
 market = MarketAnalytics()
@@ -39,7 +46,7 @@ salary = SalaryIntelligence()
 # TOP MARKETS
 # --------------------------------------------------
 
-st.subheader(
+section_header(
     "🔥 Top Executive Markets"
 )
 
@@ -47,12 +54,12 @@ st.subheader(
 top_markets = market.get_top_markets()
 
 
-col1, col2, col3 = st.columns(3)
+cols = st.columns(3)
 
 
 for index, item in enumerate(top_markets[:3]):
 
-    with [col1, col2, col3][index]:
+    with cols[index]:
 
         st.metric(
             item["country"],
@@ -64,8 +71,7 @@ for index, item in enumerate(top_markets[:3]):
         )
 
 
-
-st.divider()
+divider()
 
 
 
@@ -73,7 +79,7 @@ st.divider()
 # ROLE DEMAND
 # --------------------------------------------------
 
-st.subheader(
+section_header(
     "📈 Executive Role Demand"
 )
 
@@ -83,13 +89,12 @@ role_demand = market.get_role_demand()
 
 for role, count in role_demand:
 
-    st.success(
-        f"{role}  →  Market Demand Score: {count*25}%"
+    success_box(
+        f"{role} → Market Demand Score: {count*25}%"
     )
 
 
-
-st.divider()
+divider()
 
 
 
@@ -97,7 +102,7 @@ st.divider()
 # SKILL TRENDS
 # --------------------------------------------------
 
-st.subheader(
+section_header(
     "🧠 Executive Skill Trends"
 )
 
@@ -107,13 +112,12 @@ skill_trends = market.get_skill_trends()
 
 for skill, count in skill_trends:
 
-    st.info(
-        f"{skill}  →  Demand Index: {count*25}%"
+    info_box(
+        f"{skill} → Demand Index: {count*25}%"
     )
 
 
-
-st.divider()
+divider()
 
 
 
@@ -121,7 +125,7 @@ st.divider()
 # COUNTRY ANALYSIS
 # --------------------------------------------------
 
-st.subheader(
+section_header(
     "🌍 Country Market Analysis"
 )
 
@@ -131,19 +135,13 @@ country = st.selectbox(
     "Select Country",
 
     [
-
         "Singapore",
-
         "UAE",
-
         "Germany",
-
         "India"
-
     ]
 
 )
-
 
 
 analysis = market.get_country_analysis(
@@ -151,32 +149,30 @@ analysis = market.get_country_analysis(
 )
 
 
-st.write(
-    "### Market Position"
+metric_row(
+    [
+
+        (
+            "Hiring Demand",
+            f"{analysis.get('demand_score',0)}%"
+        ),
+
+        (
+            "Salary Index",
+            f"{analysis.get('salary_index',0)}%"
+        ),
+
+        (
+            "Market",
+            country
+        )
+
+    ]
 )
 
 
-st.metric(
-
-    "Hiring Demand",
-
-    f"{analysis.get('demand_score',0)}%"
-
-)
-
-
-st.metric(
-
-    "Salary Index",
-
-    f"{analysis.get('salary_index',0)}%"
-
-)
-
-
-
-st.write(
-    "### Recommended Roles"
+st.subheader(
+    "Recommended Executive Roles"
 )
 
 
@@ -185,14 +181,13 @@ for role in analysis.get(
     []
 ):
 
-    st.success(
+    success_box(
         role
     )
 
 
-
-st.write(
-    "### Required Skills"
+st.subheader(
+    "Required Skills"
 )
 
 
@@ -201,13 +196,12 @@ for skill in analysis.get(
     []
 ):
 
-    st.warning(
+    warning_box(
         skill
     )
 
 
-
-st.divider()
+divider()
 
 
 
@@ -215,7 +209,7 @@ st.divider()
 # SALARY BENCHMARK
 # --------------------------------------------------
 
-st.subheader(
+section_header(
     "💰 Executive Salary Benchmark"
 )
 
@@ -225,17 +219,12 @@ role = st.selectbox(
     "Select Executive Role",
 
     [
-
         "VP Sales",
-
         "Head of Sales",
-
         "Regional Sales Director"
-
     ]
 
 )
-
 
 
 benchmark = salary.get_salary_benchmark(
@@ -247,49 +236,36 @@ benchmark = salary.get_salary_benchmark(
 )
 
 
-
 if "average" in benchmark:
 
 
-    col1, col2, col3 = st.columns(3)
+    metric_row(
 
+        [
 
-    with col1:
+            (
+                "Low Range",
+                f"{benchmark['currency']} {benchmark['low']:,}"
+            ),
 
-        st.metric(
+            (
+                "Average",
+                f"{benchmark['currency']} {benchmark['average']:,}"
+            ),
 
-            "Low Range",
+            (
+                "High Range",
+                f"{benchmark['currency']} {benchmark['high']:,}"
+            )
 
-            f"{benchmark['currency']} {benchmark['low']:,}"
+        ]
 
-        )
-
-
-    with col2:
-
-        st.metric(
-
-            "Average",
-
-            f"{benchmark['currency']} {benchmark['average']:,}"
-
-        )
-
-
-    with col3:
-
-        st.metric(
-
-            "High Range",
-
-            f"{benchmark['currency']} {benchmark['high']:,}"
-
-        )
+    )
 
 
 else:
 
-    st.warning(
+    warning_box(
         benchmark.get(
             "message",
             "No salary data available"
@@ -297,8 +273,7 @@ else:
     )
 
 
-
-st.divider()
+divider()
 
 
 
@@ -306,7 +281,7 @@ st.divider()
 # CAREER RECOMMENDATION
 # --------------------------------------------------
 
-st.subheader(
+section_header(
     "🎯 Executive Career Recommendation"
 )
 
@@ -316,32 +291,43 @@ recommendation = market.executive_market_recommendation(
     23,
 
     [
-
         "Technology",
-
         "Telecom",
-
         "SaaS"
+    ]
 
+)
+
+
+success_box(
+
+    "Recommended Markets: "
+    +
+    ", ".join(
+        recommendation["recommended_markets"]
+    )
+
+)
+
+
+info_box(
+
+    recommendation[
+        "recommended_strategy"
     ]
 
 )
 
 
 
+divider()
+
+
 st.success(
-
-    ", ".join(
-
-        recommendation["recommended_markets"]
-
-    )
-
+    "✅ Market Intelligence Dashboard operational."
 )
 
 
-st.info(
-
-    recommendation["recommended_strategy"]
-
+st.caption(
+    "JobHunter AI • Executive Market Intelligence Suite"
 )

@@ -3,23 +3,29 @@ import pandas as pd
 import json
 import os
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+from modules.ui_components import (
+    page_header,
+    section_header,
+    metric_row,
+    success_box,
+    warning_box,
+    info_box,
+    divider,
+    empty_state,
+)
+
 
 st.set_page_config(
     page_title="Recruiter Intelligence",
     page_icon="👥",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("👥 Recruiter Intelligence Dashboard")
 
-st.caption(
+page_header(
+    "👥 Recruiter Intelligence Dashboard",
     "Executive Recruiter Relationship Intelligence"
 )
-
-st.divider()
 
 
 # --------------------------------------------------
@@ -27,6 +33,7 @@ st.divider()
 # --------------------------------------------------
 
 RECRUITER_FILE = "database/recruiters.json"
+
 
 if os.path.exists(RECRUITER_FILE):
 
@@ -43,288 +50,267 @@ else:
     recruiters = []
 
 
-if len(recruiters) == 0:
+if not recruiters:
 
-    st.warning(
+    empty_state(
         "No recruiters available."
     )
 
     st.stop()
 
 
-df = pd.DataFrame(recruiters)
+df = pd.DataFrame(
+    recruiters
+)
 
 
 # --------------------------------------------------
 # KPI DASHBOARD
 # --------------------------------------------------
 
-st.subheader("📈 Recruiter KPIs")
+section_header(
+    "📈 Recruiter KPIs"
+)
 
-k1, k2, k3, k4 = st.columns(4)
 
-with k1:
+metric_row(
+    [
+        (
+            "Total Recruiters",
+            len(df)
+        ),
 
-    st.metric(
-        "Total Recruiters",
-        len(df)
-    )
-
-with k2:
-
-    if "company" in df.columns:
-
-        st.metric(
+        (
             "Companies",
             df["company"].nunique()
-        )
+            if "company" in df.columns
+            else "--"
+        ),
 
-    else:
-
-        st.metric(
-            "Companies",
-            "--"
-        )
-
-with k3:
-
-    if "country" in df.columns:
-
-        st.metric(
+        (
             "Countries",
             df["country"].nunique()
-        )
+            if "country" in df.columns
+            else "--"
+        ),
 
-    else:
+        (
+            "Pipeline Size",
+            len(df)
+        ),
+    ]
+)
 
-        st.metric(
-            "Countries",
-            "--"
-        )
 
-with k4:
+divider()
 
-    st.metric(
-        "Pipeline Size",
-        len(df)
-    )
-
-st.divider()
 
 # --------------------------------------------------
-# RECRUITER PIPELINE
+# PIPELINE
 # --------------------------------------------------
 
-st.subheader("📋 Recruiter Pipeline")
+section_header(
+    "📋 Recruiter Pipeline"
+)
+
 
 if "status" not in df.columns:
 
     df["status"] = "New"
 
+
 pipeline = (
-
     df.groupby("status")
-
     .size()
-
-    .reset_index(name="Recruiters")
-
-    .sort_values(
-
-        "Recruiters",
-
-        ascending=False
-
+    .reset_index(
+        name="Recruiters"
     )
-
+    .sort_values(
+        "Recruiters",
+        ascending=False
+    )
 )
+
 
 st.dataframe(
-
     pipeline,
-
     use_container_width=True,
-
-    hide_index=True
-
+    hide_index=True,
 )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# COUNTRY & COMPANY ANALYTICS
+# ANALYTICS
 # --------------------------------------------------
+
+section_header(
+    "🌍 Recruiter Network Analytics"
+)
+
 
 left, right = st.columns(2)
 
+
 with left:
 
-    st.subheader("🌍 Recruiters by Country")
+    st.write(
+        "### 🌍 Recruiters by Country"
+    )
 
     if "country" in df.columns:
 
         country_df = (
-
             df.groupby("country")
-
             .size()
-
-            .reset_index(name="Recruiters")
-
-            .sort_values(
-
-                "Recruiters",
-
-                ascending=False
-
+            .reset_index(
+                name="Recruiters"
             )
-
+            .sort_values(
+                "Recruiters",
+                ascending=False
+            )
         )
 
         st.dataframe(
-
             country_df,
-
             use_container_width=True,
-
-            hide_index=True
-
+            hide_index=True,
         )
 
     else:
 
-        st.info("Country information unavailable.")
+        info_box(
+            "Country information unavailable."
+        )
+
 
 with right:
 
-    st.subheader("🏢 Recruiters by Company")
+    st.write(
+        "### 🏢 Recruiters by Company"
+    )
 
     if "company" in df.columns:
 
         company_df = (
-
             df.groupby("company")
-
             .size()
-
-            .reset_index(name="Recruiters")
-
-            .sort_values(
-
-                "Recruiters",
-
-                ascending=False
-
+            .reset_index(
+                name="Recruiters"
             )
-
+            .sort_values(
+                "Recruiters",
+                ascending=False
+            )
         )
 
         st.dataframe(
-
             company_df,
-
             use_container_width=True,
-
-            hide_index=True
-
+            hide_index=True,
         )
 
     else:
 
-        st.info("Company information unavailable.")
+        info_box(
+            "Company information unavailable."
+        )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# RECRUITER DIRECTORY
+# DIRECTORY
 # --------------------------------------------------
 
-st.subheader("👥 Recruiter Directory")
-
-display_columns = [
-
-    c for c in [
-
-        "name",
-
-        "company",
-
-        "designation",
-
-        "country",
-
-        "status"
-
-    ]
-
-    if c in df.columns
-
-]
-
-st.dataframe(
-
-    df[display_columns],
-
-    use_container_width=True,
-
-    hide_index=True
-
+section_header(
+    "👥 Recruiter Directory"
 )
 
-st.divider()
+
+display_columns = [
+    c for c in [
+        "name",
+        "company",
+        "designation",
+        "country",
+        "status",
+    ]
+    if c in df.columns
+]
+
+
+st.dataframe(
+    df[display_columns],
+    use_container_width=True,
+    hide_index=True,
+)
+
+
+divider()
+
 
 # --------------------------------------------------
-# AI RECRUITER INSIGHTS
+# AI INSIGHTS
 # --------------------------------------------------
 
-st.subheader("🤖 AI Recruiter Insights")
+section_header(
+    "🤖 AI Recruiter Insights"
+)
+
 
 country_name = "your target markets"
 
-if "country" in df.columns and not df.empty:
 
-    top_country = (
+if (
+    "country" in df.columns
+    and not df.empty
+):
 
+    country_name = (
         df.groupby("country")
-
         .size()
-
-        .sort_values(ascending=False)
-
+        .sort_values(
+            ascending=False
+        )
         .index[0]
-
     )
 
-    country_name = top_country
 
-
-st.success(
+success_box(
     f"""
 Your recruiter network currently contains **{len(df)} recruiters**.
 
-Your strongest recruiter presence is in **{country_name}**.
+Strongest recruiter presence:
+**{country_name}**
 
 Recommendations:
 
 • Contact 3 recruiters every weekday.
-• Follow up with recruiters contacted more than 7 days ago.
-• Continue expanding your recruiter network in Singapore, UAE, Germany and other priority markets.
-• Personalise every LinkedIn message before sending.
+• Follow up after 7 days.
+• Expand recruiter coverage in priority markets.
+• Personalise every LinkedIn message.
 """
 )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# DAILY EXECUTIVE ACTIONS
+# ACTIONS
 # --------------------------------------------------
 
-st.subheader("🎯 Today's Recruiter Actions")
+section_header(
+    "🎯 Today's Recruiter Actions"
+)
 
-actions = [
+
+for action in [
 
     "Connect with 5 new executive recruiters.",
 
@@ -334,63 +320,69 @@ actions = [
 
     "Update recruiter notes after every interaction.",
 
-    "Identify recruiters in your highest-ranked relocation market."
+    "Identify recruiters in your highest-ranked market.",
 
-]
+]:
 
-for action in actions:
+    st.checkbox(
+        action
+    )
 
-    st.checkbox(action)
 
-
-st.divider()
+divider()
 
 
 # --------------------------------------------------
-# RECRUITER HEALTH SCORE
+# HEALTH SCORE
 # --------------------------------------------------
 
-st.subheader("📈 Recruiter Network Health")
+section_header(
+    "📈 Recruiter Network Health"
+)
+
 
 health = min(
-
     100,
-
     50 + len(df) * 5
-
 )
 
-st.metric(
 
-    "Recruiter Network Score",
-
-    f"{health}%"
-
+metric_row(
+    [
+        (
+            "Recruiter Network Score",
+            f"{health}%"
+        )
+    ]
 )
+
 
 if health >= 90:
 
-    st.success("Excellent recruiter coverage.")
+    success_box(
+        "Excellent recruiter coverage."
+    )
 
 elif health >= 70:
 
-    st.info("Good recruiter coverage. Continue expanding.")
+    info_box(
+        "Good recruiter coverage. Continue expanding."
+    )
 
 else:
 
-    st.warning("Increase recruiter outreach to strengthen your network.")
+    warning_box(
+        "Increase recruiter outreach to strengthen your network."
+    )
 
 
-st.divider()
+divider()
 
 
-# --------------------------------------------------
-# FOOTER
-# --------------------------------------------------
-
-st.success(
+success_box(
     "✅ Recruiter Intelligence Dashboard operational."
 )
+
 
 st.caption(
     "JobHunter AI • Recruiter Intelligence Suite"

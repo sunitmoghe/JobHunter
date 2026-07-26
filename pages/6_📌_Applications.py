@@ -3,38 +3,32 @@ import pandas as pd
 
 from modules.application_manager import ApplicationManager
 
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+from modules.ui_components import (
+    page_header,
+    section_header,
+    success_box,
+    empty_state,
+)
 
 st.set_page_config(
     page_title="Applications Tracker",
     page_icon="📌",
-    layout="wide"
+    layout="wide",
 )
 
-
-st.title(
-    "📌 Executive Application Tracker"
+page_header(
+    "📌 Executive Application Tracker",
+    "Track and manage your global executive job applications."
 )
-
-
-st.write(
-    "Track your global executive job applications."
-)
-
 
 manager = ApplicationManager()
-
 
 tab1, tab2 = st.tabs(
     [
         "➕ Add Application",
-        "📋 Application Pipeline"
+        "📋 Application Pipeline",
     ]
 )
-
 
 # --------------------------------------------------
 # ADD APPLICATION
@@ -42,26 +36,23 @@ tab1, tab2 = st.tabs(
 
 with tab1:
 
+    section_header("New Executive Application")
 
     company = st.text_input(
         "Company"
     )
 
-
     role = st.text_input(
         "Role"
     )
-
 
     country = st.text_input(
         "Country"
     )
 
-
     location = st.text_input(
         "Location"
     )
-
 
     status = st.selectbox(
         "Application Status",
@@ -70,20 +61,18 @@ with tab1:
             "Recruiter Contacted",
             "Interview",
             "Offer",
-            "Rejected"
-        ]
+            "Rejected",
+        ],
     )
-
 
     notes = st.text_area(
         "Notes"
     )
 
-
     if st.button(
-        "💾 Save Application"
+        "💾 Save Application",
+        type="primary",
     ):
-
 
         manager.add_application(
             company,
@@ -91,41 +80,39 @@ with tab1:
             country,
             location,
             status,
-            notes
+            notes,
         )
 
-
-        st.success(
-            "✅ Application saved successfully"
+        success_box(
+            "✅ Application saved successfully."
         )
-
 
 # --------------------------------------------------
-# VIEW APPLICATIONS
+# APPLICATION PIPELINE
 # --------------------------------------------------
 
 with tab2:
 
+    section_header(
+        "Application Pipeline"
+    )
 
     applications = manager.get_applications()
 
-
     if applications:
-
 
         df = pd.DataFrame(
             applications
         )
 
-
         st.dataframe(
             df,
-            width="stretch"
+            use_container_width=True,
+            hide_index=True,
         )
-
 
     else:
 
-        st.info(
+        empty_state(
             "No applications tracked yet."
         )

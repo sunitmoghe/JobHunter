@@ -5,33 +5,32 @@ from modules.profile_manager import ProfileManager
 from modules.career_strategy_ai import CareerStrategyAI
 from modules.application_tracker import ApplicationTracker
 
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+from modules.ui_components import (
+    page_header,
+    section_header,
+    metric_row,
+    success_box,
+    warning_box,
+    info_box,
+    divider,
+    empty_state,
+)
 
 st.set_page_config(
     page_title="Executive Command Center",
     page_icon="🚀",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("🚀 Executive Command Center")
-
-st.caption(
-    "Your Executive AI Career Operating System"
+page_header(
+    "🚀 Executive Command Center",
+    "Your Executive AI Career Operating System."
 )
-
-st.divider()
-
-
-# --------------------------------------------------
-# LOAD PROFILE
-# --------------------------------------------------
 
 profile_manager = ProfileManager()
 career_ai = CareerStrategyAI()
 tracker = ApplicationTracker()
+
 
 if profile_manager.profile_exists():
 
@@ -40,23 +39,14 @@ if profile_manager.profile_exists():
 else:
 
     profile = {
-
         "experience": 23,
-
         "skills": [
-
             "Sales Leadership",
-
             "P&L",
-
             "SaaS",
-
             "IoT",
-
-            "Digital Transformation"
-
-        ]
-
+            "Digital Transformation",
+        ],
     }
 
 
@@ -64,7 +54,6 @@ strategy = career_ai.career_recommendation(
     profile
 )
 
-applications = []
 
 try:
 
@@ -76,78 +65,64 @@ except Exception:
 
 
 # --------------------------------------------------
-# KPI SECTION
+# KPI DASHBOARD
 # --------------------------------------------------
 
-st.subheader("📈 Executive KPI Dashboard")
+section_header(
+    "📈 Executive KPI Dashboard"
+)
 
-col1, col2, col3, col4 = st.columns(4)
+metric_row(
+    [
+        (
+            "Executive Score",
+            f"{strategy['executive_score']['overall_score']}%"
+        ),
+        (
+            "Applications",
+            len(applications)
+        ),
+        (
+            "Top Market",
+            strategy["best_markets"][0]["country"]
+        ),
+        (
+            "Experience",
+            f"{profile.get('experience',20)} Years"
+        ),
+    ]
+)
 
-with col1:
 
-    st.metric(
-
-        "Executive Score",
-
-        f"{strategy['executive_score']['overall_score']}%"
-
-    )
-
-with col2:
-
-    st.metric(
-
-        "Applications",
-
-        len(applications)
-
-    )
-
-with col3:
-
-    st.metric(
-
-        "Top Market",
-
-        strategy["best_markets"][0]["country"]
-
-    )
-
-with col4:
-
-    st.metric(
-
-        "Experience",
-
-        f"{profile.get('experience',20)} Years"
-
-    )
-
-st.divider()
+divider()
 
 
 # --------------------------------------------------
 # TOP MARKETS
 # --------------------------------------------------
 
-st.subheader("🌍 Top Executive Markets")
+section_header(
+    "🌍 Top Executive Markets"
+)
 
 market_cols = st.columns(3)
 
-for index, market in enumerate(strategy["best_markets"]):
+for index, market in enumerate(
+    strategy["best_markets"]
+):
+
+    if index >= 3:
+        break
 
     with market_cols[index]:
 
-        st.success(
+        success_box(
             market["country"]
         )
 
         st.metric(
-
             "Relocation Score",
-
             f"{market['score']}%"
-
         )
 
         details = market["details"]
@@ -172,126 +147,149 @@ for index, market in enumerate(strategy["best_markets"]):
             f"Market Demand: {details['market_demand']}%"
         )
 
-st.divider()
+
+divider()
+
 
 # --------------------------------------------------
-# EXECUTIVE STRENGTHS & IMPROVEMENT
+# STRENGTHS AND GAPS
 # --------------------------------------------------
 
 left, right = st.columns(2)
 
+
 with left:
 
-    st.subheader("💪 Executive Strengths")
+    section_header(
+        "💪 Executive Strengths"
+    )
 
     for strength in strategy["strengths"]:
 
-        st.success(strength)
+        success_box(
+            strength
+        )
+
 
 with right:
 
-    st.subheader("⚠ Career Improvement Areas")
+    section_header(
+        "⚠ Career Improvement Areas"
+    )
 
     for gap in strategy["gaps"]:
 
-        st.warning(gap)
+        warning_box(
+            gap
+        )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# 90-DAY ACTION PLAN
+# 90 DAY PLAN
 # --------------------------------------------------
 
-st.subheader("📅 90-Day Executive Career Plan")
+section_header(
+    "📅 90-Day Executive Career Plan"
+)
+
 
 months = strategy["action_plan"]
 
-m1, m2, m3 = st.columns(3)
+month_cols = st.columns(3)
 
-with m1:
 
-    st.info("Month 1")
+for col, month in zip(
+    month_cols,
+    [
+        "Month 1",
+        "Month 2",
+        "Month 3",
+    ]
+):
 
-    for task in months["Month 1"]:
+    with col:
 
-        st.write("•", task)
+        info_box(
+            month
+        )
 
-with m2:
+        for task in months.get(
+            month,
+            []
+        ):
 
-    st.info("Month 2")
+            st.write(
+                "•",
+                task
+            )
 
-    for task in months["Month 2"]:
 
-        st.write("•", task)
-
-with m3:
-
-    st.info("Month 3")
-
-    for task in months["Month 3"]:
-
-        st.write("•", task)
-
-st.divider()
+divider()
 
 
 # --------------------------------------------------
-# APPLICATION DASHBOARD
+# APPLICATION PIPELINE
 # --------------------------------------------------
 
-st.subheader("📄 Executive Application Pipeline")
+section_header(
+    "📄 Executive Application Pipeline"
+)
 
-if len(applications) == 0:
 
-    st.info(
-        "No applications have been saved yet."
+if applications:
+
+    df = pd.DataFrame(
+        applications
+    )
+
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    metric_row(
+        [
+            (
+                "Applications",
+                len(df)
+            ),
+            (
+                "Average Priority",
+                f"{int(df['priority_score'].mean())}%"
+                if "priority_score" in df.columns
+                else "N/A"
+            ),
+            (
+                "Interview Probability",
+                f"{int(df['interview_probability'].mean())}%"
+                if "interview_probability" in df.columns
+                else "N/A"
+            ),
+        ]
     )
 
 else:
 
-    df = pd.DataFrame(applications)
-
-    st.dataframe(
-        df,
-        use_container_width=True
+    empty_state(
+        "No applications have been saved yet."
     )
 
-    col1, col2, col3 = st.columns(3)
 
-    with col1:
-
-        st.metric(
-            "Applications",
-            len(df)
-        )
-
-    with col2:
-
-        if "priority_score" in df.columns:
-
-            st.metric(
-                "Average Priority",
-                f"{int(df['priority_score'].mean())}%"
-            )
-
-    with col3:
-
-        if "interview_probability" in df.columns:
-
-            st.metric(
-                "Interview Probability",
-                f"{int(df['interview_probability'].mean())}%"
-            )
-
-st.divider()
+divider()
 
 
 # --------------------------------------------------
-# AI EXECUTIVE SUMMARY
+# AI SUMMARY
 # --------------------------------------------------
 
-st.subheader("🤖 AI Executive Summary")
+section_header(
+    "🤖 AI Executive Summary"
+)
+
 
 best_country = strategy["best_markets"][0]["country"]
 
@@ -302,53 +300,71 @@ Your Executive Readiness Score is
 Your strongest international market is
 {best_country}.
 
-Continue focusing on senior leadership,
-P&L ownership,
-enterprise sales,
-and global expansion opportunities.
+Focus areas:
 
-Priority recommendation:
+• Senior leadership roles
+• P&L ownership
+• Enterprise sales
+• Global expansion opportunities
 
-Apply consistently to Director,
+Priority roles:
+
+Director,
 VP,
 Chief Revenue Officer,
 Chief Commercial Officer,
-and Country Manager opportunities in your top relocation markets.
+Country Manager.
 """
 
-st.success(summary)
 
-st.divider()
+success_box(
+    summary
+)
+
+
+divider()
+
 
 # --------------------------------------------------
-# EXECUTIVE ANALYTICS
+# ANALYTICS
 # --------------------------------------------------
 
-st.subheader("📊 Executive Analytics")
+section_header(
+    "📊 Executive Analytics"
+)
+
 
 analytics_col1, analytics_col2 = st.columns(2)
 
+
 with analytics_col1:
 
-    st.write("### 🌍 Relocation Ranking")
+    st.write(
+        "### 🌍 Relocation Ranking"
+    )
 
-    ranking_df = pd.DataFrame([
-        {
-            "Country": m["country"],
-            "Score": m["score"]
-        }
-        for m in strategy["best_markets"]
-    ])
+    ranking_df = pd.DataFrame(
+        [
+            {
+                "Country": m["country"],
+                "Score": m["score"],
+            }
+            for m in strategy["best_markets"]
+        ]
+    )
 
     st.dataframe(
         ranking_df,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
+
 
 with analytics_col2:
 
-    st.write("### 🎯 Executive Readiness Breakdown")
+    st.write(
+        "### 🎯 Executive Readiness Breakdown"
+    )
 
     breakdown = strategy["executive_score"]["breakdown"]
 
@@ -359,60 +375,54 @@ with analytics_col2:
                 "Revenue",
                 "Global",
                 "Technology",
-                "Market"
+                "Market",
             ],
             "Score": [
                 breakdown["leadership_score"],
                 breakdown["revenue_score"],
                 breakdown["global_fit_score"],
                 breakdown["technology_score"],
-                breakdown["market_score"]
-            ]
+                breakdown["market_score"],
+            ],
         }
     )
 
     st.dataframe(
         metrics_df,
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
     )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# TODAY'S AI RECOMMENDATIONS
+# TODAY'S PRIORITIES
 # --------------------------------------------------
 
-st.subheader("🚀 Today's Executive Priorities")
+section_header(
+    "🚀 Today's Executive Priorities"
+)
 
-recommendations = [
 
+for item in [
     "Apply to 5 high-priority executive roles.",
-
     "Send LinkedIn messages to 3 senior recruiters.",
-
-    "Tailor your resume for your highest-ranked opportunity.",
-
+    "Tailor resume for highest-ranked opportunity.",
     "Prepare one executive interview success story.",
+    "Review opportunities in your #1 relocation market.",
+]:
 
-    "Review opportunities in your #1 relocation market."
-
-]
-
-for item in recommendations:
-
-    st.checkbox(item)
+    st.checkbox(
+        item
+    )
 
 
-st.divider()
+divider()
 
 
-# --------------------------------------------------
-# COMMAND CENTER FOOTER
-# --------------------------------------------------
-
-st.success(
+success_box(
     "🎯 Executive Command Center is active."
 )
 

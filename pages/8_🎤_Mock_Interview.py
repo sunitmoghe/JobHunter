@@ -3,10 +3,6 @@ import streamlit as st
 from modules.mock_interview_ai import MockInterviewAI
 
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
-
 st.set_page_config(
     page_title="Mock Interview Simulator",
     page_icon="🎤",
@@ -14,25 +10,37 @@ st.set_page_config(
 )
 
 
-# --------------------------------------------------
-# TITLE
-# --------------------------------------------------
-
 st.title(
     "🎤 AI Executive Mock Interview Simulator"
 )
 
-st.write(
-    "Practice executive interviews and receive AI feedback."
+st.caption(
+    "Practice executive interviews and receive AI-powered feedback."
 )
-
 
 
 coach = MockInterviewAI()
 
 
 # --------------------------------------------------
-# SESSION SETUP
+# RESET
+# --------------------------------------------------
+
+if st.button(
+    "🔄 New Interview"
+):
+
+    st.session_state.clear()
+
+    st.rerun()
+
+
+
+st.divider()
+
+
+# --------------------------------------------------
+# INTERVIEW SETUP
 # --------------------------------------------------
 
 st.subheader(
@@ -54,7 +62,8 @@ company = st.text_input(
 
 
 if st.button(
-    "🚀 Start Mock Interview"
+    "🚀 Start Mock Interview",
+    type="primary"
 ):
 
     st.session_state["interview"] = coach.start_interview(
@@ -64,8 +73,13 @@ if st.button(
 
     st.session_state["question_number"] = 1
 
+    st.session_state.pop(
+        "evaluation",
+        None
+    )
+
     st.success(
-        "Interview started"
+        "✅ Executive interview started"
     )
 
 
@@ -95,56 +109,84 @@ if "interview" in st.session_state:
     st.divider()
 
 
-    st.subheader(
-        f"Question {number}"
-    )
+    if question:
 
 
-    st.info(
-        question
-    )
+        st.subheader(
+            f"Question {number}"
+        )
 
 
-    answer = st.text_area(
-        "Your Answer",
-        height=250
-    )
+        st.info(
+            question
+        )
 
 
-    col1, col2 = st.columns(2)
+        answer = st.text_area(
+            "Your Executive Answer",
+            height=250
+        )
 
 
-    with col1:
-
-        if st.button(
-            "📊 Evaluate Answer"
-        ):
+        col1, col2 = st.columns(2)
 
 
-            if answer:
+        with col1:
 
 
-                evaluation = coach.evaluate_response(
-                    answer
+            if st.button(
+                "📊 Evaluate Answer"
+            ):
+
+
+                if answer.strip():
+
+
+                    evaluation = coach.evaluate_response(
+                        answer
+                    )
+
+
+                    st.session_state["evaluation"] = evaluation
+
+
+                else:
+
+                    st.warning(
+                        "Please enter your answer."
+                    )
+
+
+
+        with col2:
+
+
+            if st.button(
+                "➡ Next Question"
+            ):
+
+
+                st.session_state["question_number"] = number + 1
+
+                st.session_state.pop(
+                    "evaluation",
+                    None
                 )
 
-                st.session_state["evaluation"] = evaluation
+                st.rerun()
 
 
-            else:
 
-                st.warning(
-                    "Please enter your answer."
-                )
+    else:
 
 
-    with col2:
+        st.success(
+            """
+🎉 Interview completed.
 
-        if st.button(
-            "➡ Next Question"
-        ):
-
-            st.session_state["question_number"] = number + 1
+Review your feedback and continue practising executive responses.
+"""
+        )
 
 
 
@@ -168,7 +210,7 @@ if "evaluation" in st.session_state:
 
     st.metric(
         "Executive Readiness Score",
-        f"{evaluation['overall_score']}%"
+        f"{evaluation.get('overall_score',0)}%"
     )
 
 
@@ -177,27 +219,40 @@ if "evaluation" in st.session_state:
 
     with col1:
 
+
         st.write(
-            "### Performance Metrics"
+            "### 📊 Performance Metrics"
         )
 
 
-        for key, value in evaluation["metrics"].items():
+        for key, value in evaluation.get(
+            "metrics",
+            {}
+        ).items():
+
 
             st.progress(
+
                 value / 100,
+
                 text=f"{key.replace('_',' ').title()}: {value}%"
+
             )
+
 
 
     with col2:
 
+
         st.write(
-            "### Strengths"
+            "### 💪 Strengths"
         )
 
 
-        for item in evaluation["strengths"]:
+        for item in evaluation.get(
+            "strengths",
+            []
+        ):
 
             st.success(
                 item
@@ -205,12 +260,29 @@ if "evaluation" in st.session_state:
 
 
         st.write(
-            "### Improvement Areas"
+            "### ⚠ Improvement Areas"
         )
 
 
-        for item in evaluation["improvements"]:
+        for item in evaluation.get(
+            "improvements",
+            []
+        ):
 
             st.warning(
                 item
             )
+
+
+
+st.divider()
+
+
+st.success(
+    "✅ AI Executive Mock Interview Simulator operational."
+)
+
+
+st.caption(
+    "JobHunter AI • Executive Interview Coach Suite"
+)

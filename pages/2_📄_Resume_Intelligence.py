@@ -4,35 +4,32 @@ from modules.profile_pipeline import process_resume
 from modules.ai_resume_intelligence import AIResumeIntelligence
 from modules.profile_manager import ProfileManager
 
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+from modules.ui_components import (
+    page_header,
+    section_header,
+    success_box,
+    info_box,
+    warning_box,
+    metric_row,
+    divider,
+    empty_state,
+)
 
 st.set_page_config(
     page_title="Resume Intelligence",
     page_icon="📄",
-    layout="wide"
+    layout="wide",
 )
 
-
-# --------------------------------------------------
-# RESUME INTELLIGENCE
-# --------------------------------------------------
-
-st.title(
-    "📄 Resume Intelligence Engine"
-)
-
-st.write(
-    "Upload your resume and generate your Executive Profile."
+page_header(
+    "📄 Resume Intelligence Engine",
+    "Upload your resume to generate your Executive Profile."
 )
 
 uploaded_resume = st.file_uploader(
     "Upload Resume (PDF)",
-    type=["pdf"]
+    type=["pdf"],
 )
-
 
 if uploaded_resume:
 
@@ -53,37 +50,29 @@ if uploaded_resume:
             "temp_resume.pdf"
         )
 
-        # --------------------------------------------
-        # SAVE PROFILE FOR ENTIRE APPLICATION
-        # --------------------------------------------
-
         profile_manager = ProfileManager()
 
         profile_manager.save_profile(
             profile
         )
 
-    st.success(
+    success_box(
         "✅ Executive Profile Created Successfully"
     )
 
-    st.info(
+    info_box(
         "💾 Executive profile saved successfully for all JobHunter modules."
     )
 
-    st.divider()
+    divider()
 
-    # --------------------------------------------------
-    # EXECUTIVE PROFILE
-    # --------------------------------------------------
-
-    st.subheader(
+    section_header(
         "👤 Executive Profile"
     )
 
-    col1, col2 = st.columns(2)
+    left, right = st.columns(2)
 
-    with col1:
+    with left:
 
         st.write(
             "**Name:**",
@@ -117,7 +106,7 @@ if uploaded_resume:
             )
         )
 
-    with col2:
+    with right:
 
         st.write(
             "**LinkedIn:**",
@@ -151,13 +140,9 @@ if uploaded_resume:
             )
         )
 
-    st.divider()
+    divider()
 
-    # --------------------------------------------------
-    # SKILLS
-    # --------------------------------------------------
-
-    st.subheader(
+    section_header(
         "🛠 Skills Detected"
     )
 
@@ -168,25 +153,23 @@ if uploaded_resume:
 
     if skills:
 
-        for skill in skills:
+        cols = st.columns(3)
 
-            st.success(
-                skill
-            )
+        for index, skill in enumerate(skills):
+
+            with cols[index % 3]:
+
+                success_box(skill)
 
     else:
 
-        st.info(
-            "No skills detected"
+        empty_state(
+            "No skills detected."
         )
 
-    st.divider()
+    divider()
 
-    # --------------------------------------------------
-    # AI RESUME INTELLIGENCE
-    # --------------------------------------------------
-
-    st.subheader(
+    section_header(
         "🧠 AI Executive Intelligence"
     )
 
@@ -196,72 +179,78 @@ if uploaded_resume:
         profile
     )
 
-    st.metric(
-        "🎯 Executive Positioning Score",
-        f"{ai_analysis['positioning_score']}%"
+    metric_row(
+        [
+            (
+                "Executive Positioning",
+                f"{ai_analysis['positioning_score']}%"
+            )
+        ]
     )
 
-    st.divider()
+    divider()
 
-    st.subheader(
+    section_header(
         "📝 Executive Summary"
     )
 
-    st.info(
+    info_box(
         ai_analysis["executive_summary"]
     )
 
-    col1, col2 = st.columns(2)
+    left, right = st.columns(2)
 
-    with col1:
+    with left:
 
-        st.subheader(
+        section_header(
             "💪 Leadership Strengths"
         )
 
-        for item in ai_analysis["leadership_strengths"]:
+        for item in ai_analysis[
+            "leadership_strengths"
+        ]:
 
-            st.success(
-                item
-            )
+            success_box(item)
 
-    with col2:
+    with right:
 
-        st.subheader(
+        section_header(
             "🚀 Recommended Executive Roles"
         )
 
-        for role in ai_analysis["recommended_roles"]:
+        for role in ai_analysis[
+            "recommended_roles"
+        ]:
 
             st.write(
                 "🔥",
                 role
             )
 
-    st.divider()
+    divider()
 
-    st.subheader(
+    section_header(
         "⚠ Keyword Improvement Areas"
     )
 
-    for keyword in ai_analysis["keyword_gaps"]:
+    for keyword in ai_analysis[
+        "keyword_gaps"
+    ]:
 
-        st.warning(
-            keyword
+        warning_box(keyword)
+
+    divider()
+
+    with st.expander(
+        "📊 Complete Executive Profile"
+    ):
+
+        st.json(
+            profile
         )
-
-    st.divider()
-
-    st.subheader(
-        "📊 Complete Profile Data"
-    )
-
-    st.json(
-        profile
-    )
 
 else:
 
-    st.info(
+    empty_state(
         "Please upload a PDF resume to begin analysis."
     )

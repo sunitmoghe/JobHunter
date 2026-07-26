@@ -8,26 +8,31 @@ from modules.profile_manager import ProfileManager
 from modules.career_strategy_ai import CareerStrategyAI
 from modules.application_tracker import ApplicationTracker
 
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+from modules.ui_components import (
+    page_header,
+    section_header,
+    metric_row,
+    success_box,
+    warning_box,
+    info_box,
+    divider,
+    empty_state,
+)
 
 st.set_page_config(
     page_title="AI Executive Advisor",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("🤖 AI Executive Advisor")
+today = datetime.now().strftime(
+    "%A, %d %B %Y"
+)
 
-today = datetime.now().strftime("%A, %d %B %Y")
-
-st.caption(
+page_header(
+    "🤖 AI Executive Advisor",
     f"Executive Morning Briefing • {today}"
 )
-
-st.divider()
 
 
 # --------------------------------------------------
@@ -38,6 +43,7 @@ profile_manager = ProfileManager()
 career_ai = CareerStrategyAI()
 tracker = ApplicationTracker()
 
+
 if profile_manager.profile_exists():
 
     profile = profile_manager.load_profile()
@@ -47,10 +53,14 @@ else:
     profile = {
         "name": "Executive",
         "experience": 23,
-        "skills": []
+        "skills": [],
     }
 
-strategy = career_ai.career_recommendation(profile)
+
+strategy = career_ai.career_recommendation(
+    profile
+)
+
 
 try:
 
@@ -59,6 +69,7 @@ try:
 except Exception:
 
     applications = []
+
 
 recruiters = []
 
@@ -74,21 +85,37 @@ if os.path.exists(recruiter_file):
 
         recruiters = json.load(f)
 
-applications_df = pd.DataFrame(applications)
-recruiters_df = pd.DataFrame(recruiters)
+
+applications_df = pd.DataFrame(
+    applications
+)
+
+recruiters_df = pd.DataFrame(
+    recruiters
+)
 
 
 # --------------------------------------------------
 # EXECUTIVE BRIEFING
 # --------------------------------------------------
 
-st.subheader("🧠 Morning Executive Briefing")
+section_header(
+    "🧠 Morning Executive Briefing"
+)
 
-executive_score = strategy["executive_score"]["overall_score"]
 
-application_count = len(applications_df)
+executive_score = strategy[
+    "executive_score"
+]["overall_score"]
 
-recruiter_count = len(recruiters_df)
+application_count = len(
+    applications_df
+)
+
+recruiter_count = len(
+    recruiters_df
+)
+
 
 avg_probability = 0
 
@@ -99,62 +126,65 @@ if (
 ):
 
     avg_probability = int(
-        applications_df["interview_probability"].mean()
+        applications_df[
+            "interview_probability"
+        ].mean()
     )
 
-best_market = strategy["best_markets"][0]["country"]
 
-col1, col2, col3, col4 = st.columns(4)
+best_market = strategy[
+    "best_markets"
+][0]["country"]
 
-with col1:
 
-    st.metric(
-        "Executive Readiness",
-        f"{executive_score}%"
-    )
+metric_row(
+    [
+        (
+            "Executive Readiness",
+            f"{executive_score}%"
+        ),
+        (
+            "Applications",
+            application_count
+        ),
+        (
+            "Recruiters",
+            recruiter_count
+        ),
+        (
+            "Interview Probability",
+            f"{avg_probability}%"
+        ),
+    ]
+)
 
-with col2:
 
-    st.metric(
-        "Applications",
-        application_count
-    )
-
-with col3:
-
-    st.metric(
-        "Recruiters",
-        recruiter_count
-    )
-
-with col4:
-
-    st.metric(
-        "Interview Probability",
-        f"{avg_probability}%"
-    )
-
-st.success(
+success_box(
     f"""
 Good morning.
 
 Your strongest executive market today is **{best_market}**.
 
-Your executive profile is performing well. Focus on high-quality executive applications and personalised recruiter engagement.
+Focus on high-quality executive applications and personalised recruiter engagement.
 """
 )
 
-st.divider()
+
+divider()
+
 
 # --------------------------------------------------
-# DAILY EXECUTIVE MISSION
+# DAILY MISSION
 # --------------------------------------------------
 
-st.subheader("🎯 Today's Executive Mission")
+section_header(
+    "🎯 Today's Executive Mission"
+)
 
-mission = [
 
-    f"Apply to at least {max(5, 20 - application_count)} executive opportunities.",
+for task in [
+
+    f"Apply to at least {max(5,20-application_count)} executive opportunities.",
 
     "Contact 3 executive recruiters with personalised messages.",
 
@@ -162,135 +192,149 @@ mission = [
 
     "Tailor your CV for every shortlisted role.",
 
-    "Record all recruiter interactions in the CRM."
+    "Record all recruiter interactions in CRM."
 
-]
-
-for task in mission:
+]:
 
     st.checkbox(task)
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
 # MARKET FOCUS
 # --------------------------------------------------
 
-st.subheader("🌍 Executive Market Focus")
+section_header(
+    "🌍 Executive Market Focus"
+)
+
 
 market_df = pd.DataFrame(
-
     [
         {
             "Country": market["country"],
-            "Executive Score": market["score"]
+            "Executive Score": market["score"],
         }
 
-        for market in strategy["best_markets"]
-
+        for market in strategy[
+            "best_markets"
+        ]
     ]
-
 )
+
 
 st.dataframe(
-
     market_df,
-
     use_container_width=True,
-
-    hide_index=True
-
+    hide_index=True,
 )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# EXECUTIVE RISK MONITOR
+# RISK MONITOR
 # --------------------------------------------------
 
-st.subheader("⚠ Executive Risk Monitor")
+section_header(
+    "⚠ Executive Risk Monitor"
+)
+
 
 if application_count < 10:
 
-    st.warning(
-        "Application volume is below the recommended level."
+    warning_box(
+        "Application volume is below recommended level."
     )
 
 else:
 
-    st.success(
+    success_box(
         "Application activity is healthy."
     )
 
+
 if recruiter_count < 10:
 
-    st.warning(
+    warning_box(
         "Expand your recruiter network."
     )
 
 else:
 
-    st.success(
+    success_box(
         "Recruiter network is growing well."
     )
 
+
 if avg_probability < 70:
 
-    st.warning(
-        "Improve ATS alignment and CV tailoring to increase interview probability."
+    warning_box(
+        "Improve ATS alignment and CV tailoring."
     )
 
 else:
 
-    st.success(
+    success_box(
         "Interview probability is strong."
     )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
 # CAREER MOMENTUM
 # --------------------------------------------------
 
-st.subheader("📈 Career Momentum")
+section_header(
+    "📈 Career Momentum"
+)
+
 
 momentum = int(
-
     (
         executive_score
         +
-        min(application_count * 2, 100)
+        min(application_count * 2,100)
         +
-        min(recruiter_count * 5, 100)
+        min(recruiter_count * 5,100)
     )
-
     / 3
-
 )
 
-st.metric(
-    "Career Momentum Score",
-    f"{momentum}%"
+
+metric_row(
+    [
+        (
+            "Career Momentum Score",
+            f"{momentum}%"
+        )
+    ]
 )
 
-st.divider()
+
+divider()
+
 
 # --------------------------------------------------
-# AI EXECUTIVE COACH
+# AI COACH
 # --------------------------------------------------
 
-st.subheader("🤖 AI Executive Coach")
+section_header(
+    "🤖 AI Executive Coach"
+)
+
 
 if momentum >= 85:
 
     coaching_message = """
 You are operating at a high executive readiness level.
 
-Continue focusing on VP, Country Manager, CRO and COO opportunities.
-Your profile is competitive for international executive positions.
+Continue targeting VP, Country Manager, CRO and COO opportunities.
 """
 
 elif momentum >= 70:
@@ -298,58 +342,69 @@ elif momentum >= 70:
     coaching_message = """
 Your executive profile is progressing well.
 
-Increase recruiter engagement and continue tailoring your CV for each application to improve interview conversion.
+Increase recruiter engagement and continue tailoring applications.
 """
 
 else:
 
     coaching_message = """
-Your executive journey is on track, but consistency is the priority.
+Consistency is the priority.
 
-Increase quality applications, expand your recruiter network, and strengthen ATS alignment.
+Increase quality applications, recruiter outreach and ATS alignment.
 """
 
-st.info(coaching_message)
 
-st.divider()
+info_box(
+    coaching_message
+)
+
+
+divider()
 
 
 # --------------------------------------------------
-# PERSONALISED RECOMMENDATIONS
+# RECOMMENDATIONS
 # --------------------------------------------------
 
-st.subheader("📝 Personalised Recommendations")
+section_header(
+    "📝 Personalised Recommendations"
+)
 
-recommendations = [
+
+for recommendation in [
 
     f"Continue prioritising opportunities in {best_market}.",
 
     "Focus on Director, VP, CRO, COO and Country Manager roles.",
 
-    "Send follow-up messages to recruiters every 7–10 days.",
+    "Send recruiter follow-ups every 7–10 days.",
 
-    "Tailor your executive CV for every shortlisted position.",
+    "Tailor executive CV for every shortlisted role.",
 
-    "Track all recruiter conversations and interview outcomes.",
+    "Track recruiter conversations and interview outcomes.",
 
-    "Review your Executive Performance dashboard weekly."
+    "Review Executive Performance dashboard weekly."
 
-]
+]:
 
-for recommendation in recommendations:
+    success_box(
+        recommendation
+    )
 
-    st.success(recommendation)
 
-st.divider()
+divider()
 
 
 # --------------------------------------------------
-# EXECUTIVE DAILY CHECKLIST
+# CHECKLIST
 # --------------------------------------------------
 
-st.subheader("📅 Today's Checklist")
+section_header(
+    "📅 Today's Checklist"
+)
 
-checklist = [
+
+for item in [
 
     "Apply to executive opportunities",
 
@@ -361,68 +416,61 @@ checklist = [
 
     "Review interview preparation",
 
-    "Improve one section of your CV"
+    "Improve one section of CV"
 
-]
-
-for item in checklist:
+]:
 
     st.checkbox(item)
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# EXECUTIVE SUMMARY
+# SUMMARY
 # --------------------------------------------------
 
-st.subheader("🏁 Executive Briefing Summary")
+section_header(
+    "🏁 Executive Briefing Summary"
+)
 
-summary = pd.DataFrame({
 
-    "Indicator": [
+summary = pd.DataFrame(
+    {
+        "Indicator": [
+            "Executive Readiness",
+            "Career Momentum",
+            "Applications",
+            "Recruiters",
+            "Best Market",
+            "Interview Probability",
+        ],
 
-        "Executive Readiness",
+        "Current Status": [
+            f"{executive_score}%",
+            f"{momentum}%",
+            application_count,
+            recruiter_count,
+            best_market,
+            f"{avg_probability}%",
+        ],
+    }
+)
 
-        "Career Momentum",
-
-        "Applications",
-
-        "Recruiters",
-
-        "Best Market",
-
-        "Interview Probability"
-
-    ],
-
-    "Current Status": [
-
-        f"{executive_score}%",
-
-        f"{momentum}%",
-
-        application_count,
-
-        recruiter_count,
-
-        best_market,
-
-        f"{avg_probability}%"
-
-    ]
-
-})
 
 st.dataframe(
     summary,
     use_container_width=True,
-    hide_index=True
+    hide_index=True,
 )
 
-st.divider()
 
-st.success("✅ AI Executive Advisor operational.")
+divider()
+
+
+success_box(
+    "✅ AI Executive Advisor operational."
+)
 
 st.caption(
     "JobHunter AI • Executive Advisor Suite"

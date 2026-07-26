@@ -7,24 +7,28 @@ from modules.profile_manager import ProfileManager
 from modules.career_strategy_ai import CareerStrategyAI
 from modules.application_tracker import ApplicationTracker
 
+from modules.ui_components import (
+    page_header,
+    section_header,
+    metric_row,
+    success_box,
+    warning_box,
+    info_box,
+    divider,
+)
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
 
 st.set_page_config(
     page_title="Executive Performance",
     page_icon="📈",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("📈 Executive Performance Intelligence")
 
-st.caption(
+page_header(
+    "📈 Executive Performance Intelligence",
     "Track your executive career progress and growth."
 )
-
-st.divider()
 
 
 # --------------------------------------------------
@@ -35,6 +39,7 @@ profile_manager = ProfileManager()
 career_ai = CareerStrategyAI()
 tracker = ApplicationTracker()
 
+
 if profile_manager.profile_exists():
 
     profile = profile_manager.load_profile()
@@ -43,10 +48,14 @@ else:
 
     profile = {
         "experience": 23,
-        "skills": []
+        "skills": [],
     }
 
-strategy = career_ai.career_recommendation(profile)
+
+strategy = career_ai.career_recommendation(
+    profile
+)
+
 
 try:
 
@@ -56,9 +65,11 @@ except Exception:
 
     applications = []
 
+
 recruiters = []
 
 recruiter_file = "database/recruiters.json"
+
 
 if os.path.exists(recruiter_file):
 
@@ -70,80 +81,96 @@ if os.path.exists(recruiter_file):
 
         recruiters = json.load(f)
 
-applications_df = pd.DataFrame(applications)
-recruiters_df = pd.DataFrame(recruiters)
+
+applications_df = pd.DataFrame(
+    applications
+)
+
+recruiters_df = pd.DataFrame(
+    recruiters
+)
 
 
 # --------------------------------------------------
-# PERFORMANCE KPIs
+# KPI DASHBOARD
 # --------------------------------------------------
 
-st.subheader("📊 Executive Performance KPIs")
+section_header(
+    "📊 Executive Performance KPIs"
+)
 
-c1, c2, c3, c4 = st.columns(4)
 
-with c1:
+avg_probability = 0
 
-    st.metric(
-        "Executive Score",
-        f"{strategy['executive_score']['overall_score']}%"
+
+if (
+    not applications_df.empty
+    and
+    "interview_probability" in applications_df.columns
+):
+
+    avg_probability = int(
+        applications_df[
+            "interview_probability"
+        ].mean()
     )
 
-with c2:
 
-    st.metric(
-        "Applications",
-        len(applications_df)
-    )
+metric_row(
+    [
+        (
+            "Executive Score",
+            f"{strategy['executive_score']['overall_score']}%"
+        ),
 
-with c3:
+        (
+            "Applications",
+            len(applications_df)
+        ),
 
-    st.metric(
-        "Recruiters",
-        len(recruiters_df)
-    )
+        (
+            "Recruiters",
+            len(recruiters_df)
+        ),
 
-with c4:
+        (
+            "Interview Probability",
+            f"{avg_probability}%"
+        ),
+    ]
+)
 
-    avg_probability = 0
 
-    if (
-        not applications_df.empty
-        and
-        "interview_probability" in applications_df.columns
-    ):
+divider()
 
-        avg_probability = int(
-            applications_df["interview_probability"].mean()
-        )
-
-    st.metric(
-        "Interview Probability",
-        f"{avg_probability}%"
-    )
-
-st.divider()
 
 # --------------------------------------------------
-# EXECUTIVE GROWTH INDEX
+# GROWTH INDEX
 # --------------------------------------------------
 
-st.subheader("🚀 Executive Growth Index")
+section_header(
+    "🚀 Executive Growth Index"
+)
 
-executive_score = strategy["executive_score"]["overall_score"]
+
+executive_score = strategy[
+    "executive_score"
+]["overall_score"]
+
 
 application_score = min(
     len(applications_df) * 2,
     100
 )
 
+
 recruiter_score = min(
     len(recruiters_df) * 5,
     100
 )
 
-career_momentum = int(
 
+career_momentum = int(
     (
         executive_score
         +
@@ -151,153 +178,160 @@ career_momentum = int(
         +
         recruiter_score
     )
-
     / 3
-
 )
 
-g1, g2, g3 = st.columns(3)
 
-with g1:
+metric_row(
+    [
+        (
+            "Executive Readiness",
+            f"{executive_score}%"
+        ),
 
-    st.metric(
-        "Executive Readiness",
-        f"{executive_score}%"
-    )
+        (
+            "Career Momentum",
+            f"{career_momentum}%"
+        ),
 
-with g2:
+        (
+            "Network Strength",
+            f"{recruiter_score}%"
+        ),
+    ]
+)
 
-    st.metric(
-        "Career Momentum",
-        f"{career_momentum}%"
-    )
 
-with g3:
-
-    st.metric(
-        "Network Strength",
-        f"{recruiter_score}%"
-    )
-
-st.divider()
+divider()
 
 
 # --------------------------------------------------
-# WEEKLY PERFORMANCE REVIEW
+# WEEKLY REVIEW
 # --------------------------------------------------
 
-st.subheader("📅 Weekly Executive Performance")
+section_header(
+    "📅 Weekly Executive Performance"
+)
+
 
 review = pd.DataFrame(
-
     {
-
         "Metric": [
-
             "Applications",
-
             "Recruiters",
-
             "Executive Score",
-
             "Interview Probability",
-
-            "Career Momentum"
-
+            "Career Momentum",
         ],
 
         "Value": [
-
             len(applications_df),
-
             len(recruiters_df),
-
             executive_score,
-
             avg_probability,
-
-            career_momentum
-
-        ]
-
+            career_momentum,
+        ],
     }
-
 )
+
 
 st.dataframe(
-
     review,
-
     use_container_width=True,
-
-    hide_index=True
-
+    hide_index=True,
 )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# PERFORMANCE SNAPSHOT
+# SNAPSHOT
 # --------------------------------------------------
 
-st.subheader("📈 Executive Performance Snapshot")
+section_header(
+    "📈 Executive Performance Snapshot"
+)
 
-snapshot_left, snapshot_right = st.columns(2)
 
-with snapshot_left:
+left, right = st.columns(2)
 
-    st.write("### 💪 Executive Strengths")
+
+with left:
+
+    section_header(
+        "💪 Executive Strengths"
+    )
 
     for strength in strategy["strengths"]:
 
-        st.success(strength)
+        success_box(
+            strength
+        )
 
-with snapshot_right:
 
-    st.write("### ⚠ Areas to Improve")
+with right:
+
+    section_header(
+        "⚠ Areas to Improve"
+    )
 
     for gap in strategy["gaps"]:
 
-        st.warning(gap)
+        warning_box(
+            gap
+        )
 
-st.divider()
+
+divider()
+
 
 # --------------------------------------------------
-# AI PERFORMANCE COACH
+# AI COACH
 # --------------------------------------------------
 
-st.subheader("🤖 AI Executive Performance Coach")
+section_header(
+    "🤖 AI Executive Performance Coach"
+)
+
 
 if career_momentum >= 85:
 
     grade = "A+"
+
     coach_message = (
         "Outstanding progress. Maintain momentum and focus on high-value executive roles."
     )
 
+
 elif career_momentum >= 70:
 
     grade = "A"
+
     coach_message = (
         "Strong progress. Increase recruiter engagement and continue targeted applications."
     )
 
+
 elif career_momentum >= 55:
 
     grade = "B"
+
     coach_message = (
         "Good foundation. Increase application volume and strengthen your executive network."
     )
 
+
 else:
 
     grade = "C"
+
     coach_message = (
         "Your profile has potential. Focus on consistent applications and recruiter outreach."
     )
 
-st.success(
+
+success_box(
     f"""
 Executive Performance Grade: **{grade}**
 
@@ -305,18 +339,22 @@ Executive Performance Grade: **{grade}**
 """
 )
 
-st.divider()
+
+divider()
 
 
 # --------------------------------------------------
-# WEEKLY RECOMMENDATIONS
+# RECOMMENDATIONS
 # --------------------------------------------------
 
-st.subheader("🎯 AI Weekly Recommendations")
+section_header(
+    "🎯 AI Weekly Recommendations"
+)
 
-recommendations = [
 
-    f"Apply to at least {max(10, 20 - len(applications_df))} additional executive opportunities this week.",
+for recommendation in [
+
+    f"Apply to at least {max(10,20-len(applications_df))} additional executive opportunities this week.",
 
     "Continue prioritising Singapore, UAE and Germany.",
 
@@ -326,68 +364,62 @@ recommendations = [
 
     "Tailor your CV before every executive application.",
 
-    "Track interview outcomes and update your pipeline regularly."
+    "Track interview outcomes and update your pipeline regularly.",
 
-]
+]:
 
-for recommendation in recommendations:
+    info_box(
+        recommendation
+    )
 
-    st.info(recommendation)
 
-st.divider()
+divider()
 
 
 # --------------------------------------------------
-# PERFORMANCE SUMMARY
+# SUMMARY
 # --------------------------------------------------
 
-st.subheader("🏁 Executive Performance Summary")
-
-summary = pd.DataFrame({
-
-    "Indicator": [
-
-        "Executive Readiness",
-
-        "Career Momentum",
-
-        "Applications",
-
-        "Recruiter Network",
-
-        "Interview Probability"
-
-    ],
-
-    "Current Value": [
-
-        f"{executive_score}%",
-
-        f"{career_momentum}%",
-
-        len(applications_df),
-
-        len(recruiters_df),
-
-        f"{avg_probability}%"
-
-    ]
-
-})
-
-st.dataframe(
-
-    summary,
-
-    use_container_width=True,
-
-    hide_index=True
-
+section_header(
+    "🏁 Executive Performance Summary"
 )
 
-st.divider()
 
-st.success("✅ Executive Performance Intelligence operational.")
+summary = pd.DataFrame(
+    {
+        "Indicator": [
+            "Executive Readiness",
+            "Career Momentum",
+            "Applications",
+            "Recruiter Network",
+            "Interview Probability",
+        ],
+
+        "Current Value": [
+            f"{executive_score}%",
+            f"{career_momentum}%",
+            len(applications_df),
+            len(recruiters_df),
+            f"{avg_probability}%",
+        ],
+    }
+)
+
+
+st.dataframe(
+    summary,
+    use_container_width=True,
+    hide_index=True,
+)
+
+
+divider()
+
+
+success_box(
+    "✅ Executive Performance Intelligence operational."
+)
+
 
 st.caption(
     "JobHunter AI • Executive Performance Suite"
