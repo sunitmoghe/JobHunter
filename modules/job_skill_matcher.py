@@ -10,59 +10,75 @@ class JobSkillMatcher:
     ):
 
         resume = {
-            s.lower()
+            s.lower().strip()
             for s in resume_skills
         }
 
-        text = job_description.lower()
+        jd = job_description.lower()
 
         matched = []
-
         missing = []
 
         words = set(
             re.findall(
                 r"[a-zA-Z0-9+#.-]+",
-                text
+                jd
             )
         )
 
-        for skill in resume:
+        for skill in sorted(resume):
 
-            if skill in words:
-
+            if skill in jd:
                 matched.append(skill.title())
 
-        for word in words:
+        for word in sorted(words):
 
             if (
                 len(word) > 3
                 and word not in resume
+                and word.isalpha()
             ):
-
                 missing.append(word.title())
+
+        missing = missing[:20]
+
+        score = 0
+
+        if matched or missing:
+
+            score = round(
+                (len(matched) /
+                 (len(matched) + len(missing))) * 100,
+                2
+            )
 
         return {
 
-            "matched": sorted(
-                list(set(matched))
-            ),
+            "match_score": score,
 
-            "missing": sorted(
-                list(set(missing))
-            )[:20]
+            "matched": matched,
+
+            "missing": missing,
+
+            "interview_probability":
+                self.interview_probability(score)
         }
 
     def interview_probability(
         self,
-        executive_fit
+        score
     ):
 
-        probability = min(
-            round(
-                executive_fit * 0.92
-            ),
-            99
-        )
+        if score >= 90:
+            return 95
 
-        return probability
+        elif score >= 80:
+            return 90
+
+        elif score >= 70:
+            return 82
+
+        elif score >= 60:
+            return 70
+
+        return 55

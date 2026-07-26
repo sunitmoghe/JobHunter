@@ -2,37 +2,38 @@ class PriorityEngine:
 
     def calculate_priority(self, job, match_score):
 
-        priority = match_score
+        priority = float(match_score)
 
-        role = job.get(
-            "role",
-            ""
+        role = (
+            job.get("role")
+            or job.get("title")
+            or ""
         ).lower()
 
-        country = job.get(
-            "country",
-            ""
-        )
+        country = job.get("country", "")
+
+        company = job.get("company", "Unknown")
 
         senior_roles = [
             "chief",
+            "ceo",
             "cro",
             "coo",
-            "vp",
+            "cto",
+            "cfo",
             "vice president",
+            "vp",
             "director",
             "head",
-            "country manager"
+            "country manager",
+            "general manager",
+            "regional director"
         ]
 
-        for level in senior_roles:
+        if any(level in role for level in senior_roles):
+            priority += 12
 
-            if level in role:
-
-                priority += 10
-                break
-
-        priority_countries = [
+        preferred_countries = [
             "Singapore",
             "Germany",
             "UAE",
@@ -40,34 +41,38 @@ class PriorityEngine:
             "Norway",
             "Finland",
             "Netherlands",
-            "Australia"
+            "Australia",
+            "United Kingdom",
+            "United States"
         ]
 
-        if country in priority_countries:
-
-            priority += 5
+        if country in preferred_countries:
+            priority += 8
 
         priority = min(priority, 100)
 
         if priority >= 90:
-
             category = "🔥 Apply Immediately"
 
-        elif priority >= 75:
+        elif priority >= 80:
+            category = "⭐⭐ High Priority"
 
-            category = "⭐ High Priority"
+        elif priority >= 70:
+            category = "⭐ Good Opportunity"
 
         elif priority >= 60:
-
-            category = "📌 Review"
+            category = "📌 Worth Reviewing"
 
         else:
-
-            category = "❌ Low Fit"
+            category = "❌ Low Priority"
 
         return {
 
-            "priority_score": priority,
+            "priority_score": round(priority, 2),
 
-            "category": category
+            "category": category,
+
+            "company": company,
+
+            "country": country
         }

@@ -28,7 +28,9 @@ class ExecutiveScoringEngine:
             "vp",
             "director",
             "head",
-            "country manager"
+            "country manager",
+            "general manager",
+            "regional director"
         ]
 
     def calculate_score(
@@ -38,9 +40,10 @@ class ExecutiveScoringEngine:
         experience_years=20
     ):
 
-        role = job.get(
-            "role",
-            ""
+        role = (
+            job.get("role")
+            or job.get("title")
+            or ""
         ).lower()
 
         country = job.get(
@@ -48,14 +51,12 @@ class ExecutiveScoringEngine:
             ""
         )
 
-        leadership_score = 60
+        company = job.get(
+            "company",
+            "Unknown"
+        )
 
-        for keyword in self.executive_keywords:
-
-            if keyword in role:
-
-                leadership_score = 100
-                break
+        leadership_score = self.calculate_leadership_score(role)
 
         experience_score = min(
             100,
@@ -72,8 +73,8 @@ class ExecutiveScoringEngine:
 
         role_score = (
             100
-            if leadership_score == 100
-            else 70
+            if leadership_score >= 90
+            else 75
         )
 
         executive_fit = round(
@@ -93,6 +94,18 @@ class ExecutiveScoringEngine:
 
             "executive_fit": executive_fit,
 
+            "executive_score": executive_fit,
+
+            "priority": self.priority(executive_fit),
+
+            "recommendation": self.recommendation(
+                executive_fit
+            ),
+
+            "company": company,
+
+            "country": country,
+
             "ats_score": ats_score,
 
             "leadership_score": leadership_score,
@@ -106,3 +119,70 @@ class ExecutiveScoringEngine:
             "role_score": role_score
 
         }
+
+    def calculate_leadership_score(
+        self,
+        role
+    ):
+
+        score = 60
+
+        for keyword in self.executive_keywords:
+
+            if keyword in role:
+
+                score += 10
+
+        return min(score, 100)
+
+    def priority(
+        self,
+        score
+    ):
+
+        if score >= 90:
+            return "★★★★★ Critical"
+
+        elif score >= 80:
+            return "★★★★ High"
+
+        elif score >= 70:
+            return "★★★ Good"
+
+        elif score >= 60:
+            return "★★ Moderate"
+
+        return "★ Low"
+
+    def recommendation(
+        self,
+        score
+    ):
+
+        if score >= 90:
+
+            return (
+                "Excellent executive opportunity. Apply immediately."
+            )
+
+        elif score >= 80:
+
+            return (
+                "Strong match. Tailor your resume before applying."
+            )
+
+        elif score >= 70:
+
+            return (
+                "Good opportunity. Improve ATS keywords."
+            )
+
+        elif score >= 60:
+
+            return (
+                "Moderate fit. Apply selectively."
+            )
+
+        return (
+            "Low strategic fit."
+        )

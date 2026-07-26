@@ -1,20 +1,17 @@
 class ApplicationAssistant:
 
-
     def generate_linkedin_message(
         self,
         profile,
         job
     ):
 
-        name = profile.get(
-            "name",
-            "there"
-        )
+        name = profile.get("name", "there")
 
-        role = job.get(
-            "role",
-            "this opportunity"
+        role = (
+            job.get("role")
+            or job.get("title")
+            or "this opportunity"
         )
 
         company = job.get(
@@ -22,27 +19,34 @@ class ApplicationAssistant:
             "your organisation"
         )
 
+        industry = profile.get(
+            "industry",
+            "technology"
+        )
 
         return f"""
 Hi,
 
 I recently came across the {role} opportunity at {company} and would like to express my interest.
 
-With 23+ years of experience driving revenue growth, enterprise sales, business transformation, and leading high-performing teams across technology, SaaS, IoT, telecom and industrial solutions, I believe my background aligns well with your growth objectives.
+With over 23 years of leadership experience across {industry}, SaaS, IoT, Telecom and Technology businesses, I have successfully delivered business growth, customer success and operational transformation.
 
-Key strengths I bring:
-• Strategic Sales Leadership
-• P&L Ownership
-• Enterprise & B2B Sales Growth
-• Partner Ecosystem Development
-• Global Team Leadership
+Some highlights of my experience include:
 
-I would appreciate the opportunity to connect and discuss how my experience can contribute to your organisation's growth.
+• Driving multi-million revenue growth
+• Leading large cross-functional teams
+• Building strategic partnerships
+• Managing enterprise customers
+• P&L ownership
+• Sales transformation
+• International business expansion
 
-Regards,
+I believe my experience aligns well with your organisation's growth objectives and would welcome the opportunity to connect.
+
+Kind Regards,
+
 {name}
 """
-
 
     def generate_cover_letter(
         self,
@@ -50,9 +54,10 @@ Regards,
         job
     ):
 
-        role = job.get(
-            "role",
-            "Executive Position"
+        role = (
+            job.get("role")
+            or job.get("title")
+            or "Executive Position"
         )
 
         company = job.get(
@@ -65,62 +70,113 @@ Regards,
             "23+"
         )
 
+        industry = profile.get(
+            "industry",
+            "Technology"
+        )
 
         return f"""
 Dear Hiring Manager,
 
-I am writing to express my interest in the {role} position at {company}.
+I am excited to apply for the {role} position at {company}.
 
-I bring {experience} years of leadership experience in revenue growth, strategic sales, customer success, operations excellence and business transformation across technology-driven organisations.
-
-Throughout my career, I have successfully built sales ecosystems, managed large teams, delivered significant revenue growth and developed strategic customer relationships.
+With {experience} years of executive leadership experience across {industry}, I have consistently delivered measurable business growth through strategic planning, customer-centric leadership and operational excellence.
 
 My experience includes:
-• Enterprise Sales Leadership
-• Revenue Growth Strategy
+
+• Revenue Growth
+• Executive Leadership
+• Enterprise Sales
+• Strategic Partnerships
 • P&L Management
-• Channel Development
-• SaaS, IoT and Technology Solutions
+• Business Transformation
+• Customer Success
+• Market Expansion
 
-I am confident that my leadership experience and execution capability can contribute significantly to your organisation's continued growth.
+I am confident my leadership style, commercial acumen and execution capability would make a valuable contribution to your organisation.
 
-I look forward to the opportunity to discuss my candidature.
+Thank you for your consideration.
 
-Sincerely
+Sincerely,
+
+{profile.get("name","")}
 """
-
 
     def generate_interview_questions(
         self,
         job
     ):
 
-        role = job.get(
-            "role",
-            "Executive Role"
+        role = (
+            job.get("role")
+            or job.get("title")
+            or "Executive Role"
         )
-
 
         return [
 
-            f"Tell me about your experience relevant to {role}.",
+            f"Tell us about your experience relevant to the {role} position.",
 
-            "Describe a complex sales transformation you delivered.",
+            "Describe the largest revenue target you have achieved.",
 
-            "How have you managed large revenue targets?",
+            "How do you build high-performing sales organisations?",
 
-            "How do you build and scale high-performing teams?",
+            "Describe a strategic business transformation you led.",
 
-            "Describe a challenging customer negotiation.",
+            "Tell us about a complex negotiation involving multiple stakeholders.",
 
-            "How do you manage sales forecasting accuracy?",
+            "How do you manage forecasting accuracy?",
 
-            "What is your leadership philosophy?",
+            "How do you improve customer success at executive level?",
 
-            "How do you approach entering new markets?",
+            "Explain your leadership philosophy.",
 
-            "What KPIs do you use to measure success?",
+            "How do you manage cross-functional teams?",
 
-            "Why should we hire you for this role?"
+            "Why should we hire you for this executive position?"
+
+        ]
+
+    def executive_application_checklist(self):
+
+        return [
+
+            "Tailor resume to the Job Description",
+
+            "Optimise ATS keywords",
+
+            "Prepare executive cover letter",
+
+            "Send LinkedIn connection request",
+
+            "Research company",
+
+            "Research interviewer",
+
+            "Prepare STAR stories",
+
+            "Review financial performance of company",
+
+            "Prepare salary expectations",
+
+            "Follow up after application"
+
+        ]
+
+    def interview_tips(self):
+
+        return [
+
+            "Quantify achievements with measurable business impact.",
+
+            "Demphasise leadership and strategic thinking.",
+
+            "Use executive-level business language.",
+
+            "Demonstrate ownership of revenue and P&L.",
+
+            "Highlight global exposure and transformation initiatives.",
+
+            "Prepare examples using the STAR framework."
 
         ]
