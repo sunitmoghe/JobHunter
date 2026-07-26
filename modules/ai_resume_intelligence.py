@@ -1,115 +1,244 @@
 class AIResumeIntelligence:
 
-
     def analyze_profile(self, profile):
 
-        skills = profile.get(
-            "skills",
-            []
+        skills = profile.get("skills", [])
+        experience = profile.get("experience", "")
+        current_role = profile.get("current_role", "")
+        industry = profile.get("industry", "")
+
+        positioning_score = self.calculate_score(
+            skills,
+            experience,
+            current_role
         )
 
+        return {
 
-        experience = profile.get(
-            "experience",
-            ""
-        )
+            "positioning_score": positioning_score,
 
-
-        analysis = {
-
-            "positioning_score": self.calculate_score(
-                skills,
-                experience
+            "executive_summary": self.generate_summary(
+                profile
             ),
 
-            "executive_summary":
-                self.generate_summary(profile),
+            "leadership_strengths": self.identify_strengths(
+                skills
+            ),
 
-            "leadership_strengths":
-                self.identify_strengths(skills),
+            "recommended_roles": self.recommend_roles(
+                skills,
+                current_role
+            ),
 
-            "recommended_roles":
-                [
-                    "Chief Revenue Officer",
-                    "VP Sales",
-                    "Country Manager",
-                    "Head of Business Development",
-                    "Head of Customer Success"
-                ],
+            "keyword_gaps": self.find_keyword_gaps(
+                skills
+            ),
 
-            "keyword_gaps":
-                [
-                    "AI Transformation",
-                    "Cloud Revenue",
-                    "Digital GTM",
-                    "International Expansion"
-                ]
+            "career_advice": self.generate_career_advice(
+                positioning_score,
+                industry
+            )
         }
-
-
-        return analysis
-
-
 
     def calculate_score(
         self,
         skills,
-        experience
+        experience,
+        current_role
     ):
 
-        score = 70
+        score = 50
 
-
-        if len(skills) > 10:
-            score += 10
-
+        score += min(len(skills) * 2, 20)
 
         if experience:
+            score += 15
+
+        if current_role:
             score += 10
 
+        executive_keywords = [
+            "director",
+            "head",
+            "vice president",
+            "vp",
+            "chief",
+            "cro",
+            "coo",
+            "ceo"
+        ]
 
-        return min(
-            score,
-            100
-        )
+        role = current_role.lower()
 
+        if any(keyword in role for keyword in executive_keywords):
+            score += 10
 
+        return min(score, 100)
 
     def generate_summary(
         self,
         profile
     ):
 
-        return (
-            "Executive leader with strong experience "
-            "in revenue growth, operations and "
-            "business transformation."
+        role = profile.get(
+            "current_role",
+            "Executive Leader"
         )
 
+        industry = profile.get(
+            "industry",
+            "multiple industries"
+        )
 
+        experience = profile.get(
+            "experience",
+            "extensive"
+        )
+
+        return (
+            f"{role} with {experience} experience delivering business growth, "
+            f"commercial excellence and strategic transformation across {industry}. "
+            f"Strong background in revenue acceleration, customer success, "
+            f"operational leadership, stakeholder management and building "
+            f"high-performing teams."
+        )
 
     def identify_strengths(
         self,
         skills
     ):
 
-        strengths = []
+        leadership_keywords = {
 
-
-        keywords = [
             "sales",
             "leadership",
             "management",
             "operations",
             "strategy",
-            "revenue"
-        ]
+            "revenue",
+            "customer success",
+            "business development",
+            "crm",
+            "saas",
+            "forecasting",
+            "negotiation",
+            "partnership",
+            "p&l",
+            "growth",
+            "enterprise sales"
 
+        }
+
+        strengths = []
 
         for skill in skills:
 
-            if skill.lower() in keywords:
+            if skill.lower() in leadership_keywords:
                 strengths.append(skill)
 
+        if not strengths:
 
-        return strengths
+            strengths.append(
+                "Business Leadership"
+            )
+
+        return sorted(
+            list(set(strengths))
+        )
+
+    def recommend_roles(
+        self,
+        skills,
+        current_role
+    ):
+
+        return [
+
+            "Chief Revenue Officer",
+
+            "Chief Operating Officer",
+
+            "VP Sales",
+
+            "Regional Sales Director",
+
+            "Country Manager",
+
+            "Head of Business Development",
+
+            "Head of Customer Success",
+
+            "Commercial Director"
+
+        ]
+
+    def find_keyword_gaps(
+        self,
+        skills
+    ):
+
+        recommended = [
+
+            "AI Transformation",
+
+            "Digital Transformation",
+
+            "Cloud Revenue",
+
+            "Enterprise SaaS",
+
+            "Executive Leadership",
+
+            "Board Reporting",
+
+            "Strategic Partnerships",
+
+            "International Expansion",
+
+            "Revenue Operations",
+
+            "Go-To-Market Strategy"
+
+        ]
+
+        existing = {
+
+            skill.lower()
+
+            for skill in skills
+
+        }
+
+        gaps = []
+
+        for keyword in recommended:
+
+            if keyword.lower() not in existing:
+
+                gaps.append(keyword)
+
+        return gaps
+
+    def generate_career_advice(
+        self,
+        score,
+        industry
+    ):
+
+        if score >= 90:
+
+            return (
+                "Your executive profile is highly competitive. Focus on global leadership roles and tailor your resume for each opportunity."
+            )
+
+        elif score >= 75:
+
+            return (
+                "Your profile is strong. Strengthen it further by adding measurable achievements and executive-level keywords."
+            )
+
+        else:
+
+            return (
+                "Enhance your profile by quantifying business impact, highlighting strategic leadership and incorporating industry-specific executive terminology."
+            )
