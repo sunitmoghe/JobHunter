@@ -1,10 +1,6 @@
 import streamlit as st
 
-from modules.application_assistant import ApplicationAssistant
-from modules.application_tracker import ApplicationTracker
-from modules.application_assistant import ApplicationAssistant
 from modules.recruiter_manager import RecruiterManager
-from modules.recruiter_outreach_ai import RecruiterOutreachAI
 
 
 # --------------------------------------------------
@@ -19,248 +15,163 @@ st.set_page_config(
 
 
 # --------------------------------------------------
-# TITLE
+# PAGE HEADER
 # --------------------------------------------------
 
-st.title(
-    "🤝 Recruiter Intelligence Manager"
-)
+st.title("🤝 Executive Recruiter Manager")
 
 st.write(
-    "Manage recruiter relationships, outreach and follow-ups."
+    "Manage executive recruiters, relationships and follow-ups."
 )
-
-
-recruiter_manager = RecruiterManager()
-
-outreach_ai = RecruiterOutreachAI()
-
-application_assistant = ApplicationAssistant()
-
-
-# --------------------------------------------------
-# ADD RECRUITER
-# --------------------------------------------------
-
-st.subheader(
-    "➕ Add Recruiter"
-)
-
-
-with st.form(
-    "add_recruiter"
-):
-
-    name = st.text_input(
-        "Recruiter Name"
-    )
-
-    company = st.text_input(
-        "Company"
-    )
-
-    role = st.text_input(
-        "Role / Department"
-    )
-
-    linkedin = st.text_input(
-        "LinkedIn URL"
-    )
-
-    email = st.text_input(
-        "Email"
-    )
-
-
-    submit = st.form_submit_button(
-        "Save Recruiter"
-    )
-
-
-    if submit:
-
-        recruiter_manager.add_recruiter(
-            name,
-            company,
-            role,
-            linkedin,
-            email
-        )
-
-        st.success(
-            "✅ Recruiter saved"
-        )
-
 
 st.divider()
 
 
 # --------------------------------------------------
-# RECRUITER LIST
+# INITIALISE MANAGER
 # --------------------------------------------------
 
-st.subheader(
-    "📋 Recruiter Pipeline"
-)
+manager = RecruiterManager()
 
 
-recruiters = recruiter_manager.get_recruiters()
+# --------------------------------------------------
+# LOAD RECRUITERS
+# --------------------------------------------------
+
+recruiters = manager.get_recruiters()
 
 
-if recruiters:
+# --------------------------------------------------
+# DASHBOARD METRICS
+# --------------------------------------------------
 
+stats = manager.get_statistics()
 
-    for index, recruiter in enumerate(recruiters):
+col1, col2, col3, col4 = st.columns(4)
 
+with col1:
+    st.metric("Recruiters", stats["total_recruiters"])
 
-        with st.expander(
-            f"{recruiter.get('name')} - {recruiter.get('company')}"
-        ):
+with col2:
+    st.metric("Contacted", stats["contacted"])
 
+with col3:
+    st.metric("Responded", stats["responded"])
 
-            st.write(
-                "Role:",
-                recruiter.get(
-                    "role",
-                    ""
-                )
-            )
+with col4:
+    st.metric("Response Rate", f"{stats['response_rate']}%")
 
+st.divider()
 
-            st.write(
-                "LinkedIn:",
-                recruiter.get(
-                    "linkedin",
-                    ""
-                )
-            )
+# --------------------------------------------------
+# ADD NEW RECRUITER
+# --------------------------------------------------
 
+st.subheader("➕ Add Executive Recruiter")
 
-            st.write(
-                "Email:",
-                recruiter.get(
-                    "email",
-                    ""
-                )
-            )
+with st.form("add_recruiter_form"):
 
+    name = st.text_input("Recruiter Name")
 
-            status = st.selectbox(
+    company = st.text_input("Company")
 
-                "Status",
+    designation = st.text_input("Designation")
 
-                [
-                    "New",
-                    "Contacted",
-                    "Replied",
-                    "Interview Support",
-                    "Closed"
-                ],
+    email = st.text_input("Email")
 
-                index=[
-                    "New",
-                    "Contacted",
-                    "Replied",
-                    "Interview Support",
-                    "Closed"
-                ].index(
-                    recruiter.get(
-                        "status",
-                        "New"
-                    )
-                ),
+    linkedin = st.text_input("LinkedIn URL")
 
-                key=f"status_{index}"
+    country = st.text_input("Country")
 
-            )
+    notes = st.text_area("Notes")
 
+    submitted = st.form_submit_button("Save Recruiter")
 
-            if st.button(
-                "Update Status",
-                key=f"update_{index}"
-            ):
+    if submitted:
 
-                recruiter_manager.update_status(
-                    index,
-                    status
-                )
+        recruiter = {
 
-                st.success(
-                    "Status updated"
-                )
+            "name": name,
 
+            "company": company,
 
-            notes = st.text_area(
+            "designation": designation,
 
-                "Notes",
+            "email": email,
 
-                recruiter.get(
-                    "notes",
-                    ""
-                ),
+            "linkedin": linkedin,
 
-                key=f"notes_{index}"
+            "country": country,
 
-            )
+            "notes": notes
 
+        }
 
-            if st.button(
-                "Save Notes",
-                key=f"notes_save_{index}"
-            ):
+        manager.add_recruiter(recruiter)
 
-                recruiter_manager.update_notes(
-                    index,
-                    notes
-                )
+        st.success("✅ Recruiter saved successfully.")
 
-                st.success(
-                    "Notes saved"
-                )
-            st.divider()
+        st.rerun()
 
+# --------------------------------------------------
+# RECRUITER DATABASE
+# --------------------------------------------------
 
-            st.subheader(
-                "🤖 AI Recruiter Outreach"
-            )
+st.divider()
 
+st.subheader("📋 Recruiter Database")
 
-            if st.button(
-                "💬 Generate LinkedIn Message",
-                key=f"linkedin_{index}"
-            ):
+recruiters = manager.get_recruiters()
 
-                message = outreach_ai.generate_connection_message(
-                    {},
-                    recruiter
-                )
+if not recruiters:
 
-                st.text_area(
-                    "LinkedIn Message",
-                    message,
-                    height=250,
-                    key=f"linkedin_msg_{index}"
-                )
-
-
-            if st.button(
-                "📨 Generate Follow-up Message",
-                key=f"followup_{index}"
-            ):
-
-                message = outreach_ai.generate_followup_message(
-                    recruiter
-                )
-
-                st.text_area(
-                    "Follow-up Message",
-                    message,
-                    height=250,
-                    key=f"followup_msg_{index}"
-                )
+    st.info("No recruiters have been added yet.")
 
 else:
 
-    st.info(
-        "No recruiters added yet."
+    search = st.text_input(
+        "🔍 Search Recruiters"
     )
+
+    if search:
+
+        recruiters = manager.search_recruiters(search)
+
+    st.write(
+        f"Showing {len(recruiters)} recruiter(s)"
+    )
+
+    for i, recruiter in enumerate(recruiters):
+
+        with st.expander(
+            f"{recruiter.get('name','Unknown')} | {recruiter.get('company','')}"
+        ):
+
+            st.write(
+                f"**Designation:** {recruiter.get('designation','')}"
+            )
+
+            st.write(
+                f"**Country:** {recruiter.get('country','')}"
+            )
+
+            st.write(
+                f"**Email:** {recruiter.get('email','')}"
+            )
+
+            st.write(
+                f"**LinkedIn:** {recruiter.get('linkedin','')}"
+            )
+
+            st.write(
+                f"**Status:** {recruiter.get('status','New')}"
+            )
+
+            st.write(
+                f"**Last Contact:** {recruiter.get('last_contact','')}"
+            )
+
+            st.write(
+                f"**Notes:** {recruiter.get('notes','')}"
+            )
+

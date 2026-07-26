@@ -8,5 +8,27 @@
         "status": "New",
         "last_contact": "2026-07-26",
         "notes": ""
+    },
+    {
+        "name": "Sunit Moghe",
+        "company": "Sunit Moghe",
+        "designation": "HR VP",
+        "email": "sunitmoghendd@gmail.com",
+        "linkedin": "https://linkedin.com/in/sunitmoghe",
+        "country": "India",
+        "status": "New",
+        "last_contact": "2026-07-26",
+        "notes": ""
+    },
+    {
+        "name": "Madha Moghe",
+        "company": "",
+        "designation": "",
+        "email": "",
+        "linkedin": "",
+        "country": "",
+        "status": "New",
+        "last_contact": "2026-07-26",
+        "notes": ""
     }
 ]
