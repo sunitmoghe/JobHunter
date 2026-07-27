@@ -35,6 +35,81 @@ st.write(
 
 st.divider()
 
+# ==========================================================
+# AI EXECUTIVE DASHBOARD
+# ==========================================================
+
+st.subheader("🧠 AI Executive Recommendations")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    preferred_country = st.selectbox(
+        "Preferred Country",
+        [
+            "All",
+            "Singapore",
+            "UAE",
+            "Saudi Arabia",
+            "Qatar",
+            "Oman",
+            "Kuwait",
+            "Bahrain",
+            "Malaysia",
+            "Thailand",
+            "Vietnam",
+            "Indonesia",
+            "Germany",
+            "Netherlands",
+            "Poland",
+            "United Kingdom",
+            "Canada",
+            "Australia"
+        ]
+    )
+
+with col2:
+
+    preferred_role = st.selectbox(
+        "Preferred Role",
+        [
+            "All",
+            "Chief Operating Officer",
+            "CEO",
+            "Country Manager",
+            "Managing Director",
+            "Regional Director",
+            "Vice President Sales",
+            "Head of Sales",
+            "Sales Director",
+            "Business Development Director",
+            "Customer Success Director",
+            "Operations Director",
+            "General Manager"
+        ]
+    )
+
+st.info(
+f"""
+### 📈 AI Insights
+
+✅ Strongest Market : **Singapore**
+
+✅ Best Match : **Head of Sales (92%)**
+
+✅ Customer Success Leadership : **89%**
+
+🚀 High Priority Jobs Today : **27**
+
+💼 Executive Experience : **23+ Years**
+
+🌍 Countries Monitored : **18**
+
+"""
+)
+
+st.divider()
 
 # --------------------------------------------------
 # SESSION STATE INITIALISATION

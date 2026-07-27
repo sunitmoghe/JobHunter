@@ -169,7 +169,7 @@ Sincerely,
 
             "Quantify achievements with measurable business impact.",
 
-            "Demphasise leadership and strategic thinking.",
+            "Emphasise leadership and strategic thinking.",
 
             "Use executive-level business language.",
 
