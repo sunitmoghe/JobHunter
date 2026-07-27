@@ -1,6 +1,7 @@
 from modules.unified_job_engine import UnifiedJobEngine
 from modules.executive_config import EXECUTIVE_ROLES
 from modules.executive_scoring_engine import ExecutiveScoringEngine
+from modules.parallel_search_engine import ParallelSearchEngine
 
 
 class ExecutiveAIAgent:
@@ -8,6 +9,11 @@ class ExecutiveAIAgent:
     def __init__(self):
 
         self.engine = UnifiedJobEngine()
+
+        self.parallel_engine = ParallelSearchEngine(
+            self.engine
+        )
+
         self.scoring = ExecutiveScoringEngine()
 
     def search_all_roles(self, max_roles=None):
@@ -53,45 +59,37 @@ class ExecutiveAIAgent:
             roles = roles[:max_roles]
 
         # --------------------------------------------------
-        # SEARCH JOBS
+        # PARALLEL SEARCH
         # --------------------------------------------------
 
-        for role in roles:
+        jobs = self.parallel_engine.search_roles(roles)
 
-            try:
+        # --------------------------------------------------
+        # SCORE JOBS
+        # --------------------------------------------------
 
-                print(f"Searching Executive Role: {role}")
+        for job in jobs:
 
-                jobs = self.engine.search_jobs(role)
+            score_data = self.scoring.calculate_score(job)
 
-                for job in jobs:
+            executive_score = score_data.get(
+                "executive_fit",
+                0
+            )
 
-                    job["executive_role"] = role
+            job["executive_score"] = executive_score
 
-                    score_data = self.scoring.calculate_score(job)
+            job["score_details"] = score_data
 
-                    executive_score = score_data.get(
-                        "executive_fit",
-                        0
-                    )
+            job["priority"] = self.get_priority(
+                executive_score
+            )
 
-                    job["executive_score"] = executive_score
+            job["recommendation"] = self.get_recommendation(
+                executive_score
+            )
 
-                    job["score_details"] = score_data
-
-                    job["priority"] = self.get_priority(
-                        executive_score
-                    )
-
-                    job["recommendation"] = self.get_recommendation(
-                        executive_score
-                    )
-
-                    executive_jobs.append(job)
-
-            except Exception as e:
-
-                print(f"Error searching {role}: {e}")
+            executive_jobs.append(job)
 
         executive_jobs.sort(
 
