@@ -1,7 +1,6 @@
 from modules.unified_job_engine import UnifiedJobEngine
 from modules.executive_config import EXECUTIVE_ROLES
 from modules.executive_scoring_engine import ExecutiveScoringEngine
-from modules.parallel_search_engine import ParallelSearchEngine
 
 
 class ExecutiveAIAgent:
@@ -10,86 +9,72 @@ class ExecutiveAIAgent:
 
         self.engine = UnifiedJobEngine()
 
-        self.parallel_engine = ParallelSearchEngine(
-            self.engine
-        )
-
         self.scoring = ExecutiveScoringEngine()
 
-    def search_all_roles(self, max_roles=None):
+    def search_single_role(
+        self,
+        role
+    ):
 
         executive_jobs = []
 
-        # --------------------------------------------------
-        # SEARCH HIGH PRIORITY ROLES FIRST
-        # --------------------------------------------------
+        try:
 
-        priority_roles = [
+            jobs = self.engine.search_jobs(role)
 
-            "Head of Sales",
+            for job in jobs:
 
-            "Sales Director",
+                job["executive_role"] = role
 
-            "Regional Sales Director",
+                score_data = self.scoring.calculate_score(job)
 
-            "VP Sales",
+                executive_score = score_data.get(
+                    "executive_fit",
+                    0
+                )
 
-            "Business Development Director",
+                job["executive_score"] = executive_score
 
-            "Customer Success Director",
+                job["score_details"] = score_data
 
-            "Chief Operating Officer"
+                job["priority"] = self.get_priority(
+                    executive_score
+                )
 
-        ]
+                job["recommendation"] = self.get_recommendation(
+                    executive_score
+                )
 
-        remaining_roles = [
+                executive_jobs.append(job)
 
-            role
+        except Exception as e:
 
-            for role in EXECUTIVE_ROLES
+            print(f"Error searching {role}: {e}")
 
-            if role not in priority_roles
+        return executive_jobs
 
-        ]
+    def search_all_roles(
+        self,
+        max_roles=None
+    ):
 
-        roles = priority_roles + remaining_roles
+        if max_roles is None:
 
-        if max_roles is not None:
+            roles = EXECUTIVE_ROLES
 
-            roles = roles[:max_roles]
+        else:
 
-        # --------------------------------------------------
-        # PARALLEL SEARCH
-        # --------------------------------------------------
+            roles = EXECUTIVE_ROLES[:max_roles]
 
-        jobs = self.parallel_engine.search_roles(roles)
+        executive_jobs = []
 
-        # --------------------------------------------------
-        # SCORE JOBS
-        # --------------------------------------------------
+        for role in roles:
 
-        for job in jobs:
+            executive_jobs.extend(
 
-            score_data = self.scoring.calculate_score(job)
+                self.search_single_role(role)
 
-            executive_score = score_data.get(
-                "executive_fit",
-                0
             )
-
-            job["executive_score"] = executive_score
-
-            job["score_details"] = score_data
-
-            job["priority"] = self.get_priority(
-                executive_score
-            )
-
-            job["recommendation"] = self.get_recommendation(
-                executive_score
-            )
-
-            executive_jobs.append(job)
 
         executive_jobs.sort(
 
@@ -104,7 +89,10 @@ class ExecutiveAIAgent:
 
         return executive_jobs
 
-    def get_priority(self, score):
+    def get_priority(
+        self,
+        score
+    ):
 
         if score >= 90:
 
@@ -124,7 +112,10 @@ class ExecutiveAIAgent:
 
         return "⭐ Low"
 
-    def get_recommendation(self, score):
+    def get_recommendation(
+        self,
+        score
+    ):
 
         if score >= 90:
 
@@ -161,9 +152,10 @@ if __name__ == "__main__":
 
     jobs = agent.search_all_roles()
 
-    print()
     print("=" * 80)
+
     print(f"TOTAL EXECUTIVE JOBS FOUND : {len(jobs)}")
+
     print("=" * 80)
 
     for job in jobs[:20]:
