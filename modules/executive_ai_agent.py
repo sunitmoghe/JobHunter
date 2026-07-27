@@ -14,10 +14,47 @@ class ExecutiveAIAgent:
 
         executive_jobs = []
 
-        if max_roles is None:
-            roles = EXECUTIVE_ROLES
-        else:
-            roles = EXECUTIVE_ROLES[:max_roles]
+        # --------------------------------------------------
+        # SEARCH HIGH PRIORITY ROLES FIRST
+        # --------------------------------------------------
+
+        priority_roles = [
+
+            "Head of Sales",
+
+            "Sales Director",
+
+            "Regional Sales Director",
+
+            "VP Sales",
+
+            "Business Development Director",
+
+            "Customer Success Director",
+
+            "Chief Operating Officer"
+
+        ]
+
+        remaining_roles = [
+
+            role
+
+            for role in EXECUTIVE_ROLES
+
+            if role not in priority_roles
+
+        ]
+
+        roles = priority_roles + remaining_roles
+
+        if max_roles is not None:
+
+            roles = roles[:max_roles]
+
+        # --------------------------------------------------
+        # SEARCH JOBS
+        # --------------------------------------------------
 
         for role in roles:
 
@@ -33,9 +70,13 @@ class ExecutiveAIAgent:
 
                     score_data = self.scoring.calculate_score(job)
 
-                    executive_score = score_data["executive_fit"]
+                    executive_score = score_data.get(
+                        "executive_fit",
+                        0
+                    )
 
                     job["executive_score"] = executive_score
+
                     job["score_details"] = score_data
 
                     job["priority"] = self.get_priority(
@@ -53,11 +94,14 @@ class ExecutiveAIAgent:
                 print(f"Error searching {role}: {e}")
 
         executive_jobs.sort(
+
             key=lambda x: x.get(
                 "executive_score",
                 0
             ),
+
             reverse=True
+
         )
 
         return executive_jobs
@@ -65,15 +109,19 @@ class ExecutiveAIAgent:
     def get_priority(self, score):
 
         if score >= 90:
+
             return "⭐⭐⭐⭐⭐ Critical"
 
         elif score >= 80:
+
             return "⭐⭐⭐⭐ High"
 
         elif score >= 70:
+
             return "⭐⭐⭐ Good"
 
         elif score >= 60:
+
             return "⭐⭐ Moderate"
 
         return "⭐ Low"
@@ -81,21 +129,25 @@ class ExecutiveAIAgent:
     def get_recommendation(self, score):
 
         if score >= 90:
+
             return (
                 "Excellent executive opportunity. Apply immediately."
             )
 
         elif score >= 80:
+
             return (
                 "Strong match. Tailor your resume and apply."
             )
 
         elif score >= 70:
+
             return (
                 "Good opportunity. Improve ATS keywords before applying."
             )
 
         elif score >= 60:
+
             return (
                 "Possible opportunity. Resume tailoring recommended."
             )
