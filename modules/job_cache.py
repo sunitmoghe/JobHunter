@@ -1,3 +1,5 @@
+import json
+import os
 import time
 
 
@@ -5,17 +7,83 @@ class JobCache:
 
     def __init__(self):
 
-        self.cache = {}
+        self.cache_dir = "database"
 
-        self.expiry = 1800
+        self.cache_file = os.path.join(
+            self.cache_dir,
+            "job_cache.json"
+        )
 
-    def save(
+        self.expiry_seconds = 1800
+
+        self._ensure_cache()
+
+    def _ensure_cache(self):
+
+        os.makedirs(
+            self.cache_dir,
+            exist_ok=True
+        )
+
+        if not os.path.exists(self.cache_file):
+
+            with open(
+                self.cache_file,
+                "w",
+                encoding="utf-8"
+            ) as f:
+
+                json.dump(
+                    {},
+                    f,
+                    indent=4
+                )
+
+    def _load(self):
+
+        self._ensure_cache()
+
+        try:
+
+            with open(
+                self.cache_file,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
+                return json.load(f)
+
+        except Exception:
+
+            return {}
+
+    def _save(
         self,
-        key,
+        cache
+    ):
+
+        with open(
+            self.cache_file,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            json.dump(
+                cache,
+                f,
+                indent=4,
+                ensure_ascii=False
+            )
+
+    def save_jobs(
+        self,
+        role,
         jobs
     ):
 
-        self.cache[key] = {
+        cache = self._load()
+
+        cache[role] = {
 
             "timestamp": time.time(),
 
@@ -23,48 +91,52 @@ class JobCache:
 
         }
 
-    def get(
+        self._save(cache)
+
+    def get_jobs(
         self,
-        key
+        role
     ):
 
-        if key not in self.cache:
+        cache = self._load()
+
+        if role not in cache:
 
             return None
 
-        record = self.cache[key]
+        record = cache[role]
 
         age = time.time() - record["timestamp"]
 
-        if age > self.expiry:
+        if age > self.expiry_seconds:
 
-            del self.cache[key]
+            del cache[role]
+
+            self._save(cache)
 
             return None
 
         return record["jobs"]
 
-    def clear(self):
+    def clear_cache(self):
 
-        self.cache = {}
-
-    def exists(
-        self,
-        key
-    ):
-
-        return self.get(key) is not None
-
-    def size(self):
-
-        return len(self.cache)
+        self._save({})
 
     def statistics(self):
 
+        cache = self._load()
+
         return {
 
-            "cached_searches": len(self.cache),
+            "cached_roles": len(cache),
 
-            "expiry_seconds": self.expiry
+            "expiry_minutes": self.expiry_seconds // 60
 
         }
+
+
+if __name__ == "__main__":
+
+    cache = JobCache()
+
+    print(cache.statistics())

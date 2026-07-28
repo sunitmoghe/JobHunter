@@ -1,6 +1,8 @@
 from modules.unified_job_engine import UnifiedJobEngine
 from modules.executive_config import EXECUTIVE_ROLES
 from modules.executive_scoring_engine import ExecutiveScoringEngine
+from modules.parallel_search_engine import ParallelSearchEngine
+from modules.job_cache import JobCache
 
 
 class ExecutiveAIAgent:
@@ -9,49 +11,58 @@ class ExecutiveAIAgent:
 
         self.engine = UnifiedJobEngine()
 
+        self.parallel_engine = ParallelSearchEngine(
+            self.engine
+        )
+
         self.scoring = ExecutiveScoringEngine()
+
+        self.cache = JobCache()
 
     def search_single_role(
         self,
         role
     ):
 
-        executive_jobs = []
+        cached_jobs = self.cache.get_jobs(role)
 
-        try:
+        if cached_jobs:
 
-            jobs = self.engine.search_jobs(role)
+            print(f"✓ Using cache for {role}")
 
-            for job in jobs:
+            return cached_jobs
 
-                job["executive_role"] = role
+        jobs = self.engine.search_jobs(role)
 
-                score_data = self.scoring.calculate_score(job)
+        for job in jobs:
 
-                executive_score = score_data.get(
-                    "executive_fit",
-                    0
-                )
+            job["executive_role"] = role
 
-                job["executive_score"] = executive_score
+            score_data = self.scoring.calculate_score(job)
 
-                job["score_details"] = score_data
+            executive_score = score_data.get(
+                "executive_fit",
+                0
+            )
 
-                job["priority"] = self.get_priority(
-                    executive_score
-                )
+            job["executive_score"] = executive_score
 
-                job["recommendation"] = self.get_recommendation(
-                    executive_score
-                )
+            job["score_details"] = score_data
 
-                executive_jobs.append(job)
+            job["priority"] = self.get_priority(
+                executive_score
+            )
 
-        except Exception as e:
+            job["recommendation"] = self.get_recommendation(
+                executive_score
+            )
 
-            print(f"Error searching {role}: {e}")
+        self.cache.save_jobs(
+            role,
+            jobs
+        )
 
-        return executive_jobs
+        return jobs
 
     def search_all_roles(
         self,
@@ -66,15 +77,34 @@ class ExecutiveAIAgent:
 
             roles = EXECUTIVE_ROLES[:max_roles]
 
+        jobs = self.parallel_engine.search_roles(
+            roles
+        )
+
         executive_jobs = []
 
-        for role in roles:
+        for job in jobs:
 
-            executive_jobs.extend(
+            score_data = self.scoring.calculate_score(job)
 
-                self.search_single_role(role)
-
+            executive_score = score_data.get(
+                "executive_fit",
+                0
             )
+
+            job["executive_score"] = executive_score
+
+            job["score_details"] = score_data
+
+            job["priority"] = self.get_priority(
+                executive_score
+            )
+
+            job["recommendation"] = self.get_recommendation(
+                executive_score
+            )
+
+            executive_jobs.append(job)
 
         executive_jobs.sort(
 
@@ -89,25 +119,25 @@ class ExecutiveAIAgent:
 
         return executive_jobs
 
+    def clear_cache(self):
+
+        self.cache.clear_cache()
+
     def get_priority(
         self,
         score
     ):
 
         if score >= 90:
-
             return "⭐⭐⭐⭐⭐ Critical"
 
         elif score >= 80:
-
             return "⭐⭐⭐⭐ High"
 
         elif score >= 70:
-
             return "⭐⭐⭐ Good"
 
         elif score >= 60:
-
             return "⭐⭐ Moderate"
 
         return "⭐ Low"
@@ -150,26 +180,20 @@ if __name__ == "__main__":
 
     agent = ExecutiveAIAgent()
 
-    jobs = agent.search_all_roles()
+    jobs = agent.search_all_roles(max_roles=5)
 
-    print("=" * 80)
+    print("=" * 60)
 
-    print(f"TOTAL EXECUTIVE JOBS FOUND : {len(jobs)}")
+    print(f"Jobs Found : {len(jobs)}")
 
-    print("=" * 80)
+    print("=" * 60)
 
-    for job in jobs[:20]:
+    for job in jobs[:10]:
 
-        print()
-
-        print("Role :", job.get("role", "Unknown"))
-
-        print("Company :", job.get("company", "Unknown"))
-
-        print("Location :", job.get("location", "Unknown"))
-
-        print("Executive Score :", job.get("executive_score"))
-
-        print("Priority :", job.get("priority"))
-
-        print("Recommendation :", job.get("recommendation"))
+        print(
+            job.get("role"),
+            "|",
+            job.get("company"),
+            "|",
+            job.get("executive_score")
+        )
