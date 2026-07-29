@@ -1,181 +1,104 @@
-"""
-Recruiter Intelligence Engine
-Sprint 20
-JobHunter AI
-
-This module enriches every executive job with recruiter
-and company contact intelligence.
-
-Current Version:
-    • Company website lookup
-    • Careers page generation
-    • Recruiter placeholders
-    • HR email generation
-    • Contact confidence scoring
-
-Future Sprint Extensions:
-    • LinkedIn Recruiter Search
-    • Hunter.io
-    • Apollo.io
-    • RocketReach
-    • Company Directory APIs
-    • AI Contact Discovery
-"""
-
-from urllib.parse import quote_plus
+import re
 
 
 class RecruiterIntelligence:
 
+    """
+    Recruiter & Company Contact Intelligence
+
+    Enriches executive jobs with:
+
+    • Company Website
+    • Careers Page
+    • HR Email
+    • Recruiter Email (if known)
+    • LinkedIn Company Page
+    • Contact Confidence
+    """
+
     def __init__(self):
-        pass
 
-    # --------------------------------------------------
-    # Main Enrichment Function
-    # --------------------------------------------------
+        self.company_database = {
 
-    def enrich_job(self, job):
+            "Microsoft": {
+                "website": "https://www.microsoft.com",
+                "careers": "https://careers.microsoft.com",
+                "linkedin": "https://www.linkedin.com/company/microsoft",
+                "hr_email": "askhr@microsoft.com"
+            },
 
-        company = job.get("company", "").strip()
-        country = job.get("country", "").strip()
+            "Google": {
+                "website": "https://about.google",
+                "careers": "https://careers.google.com",
+                "linkedin": "https://www.linkedin.com/company/google",
+                "hr_email": ""
+            },
 
-        company_slug = company.lower().replace(" ", "")
+            "Amazon": {
+                "website": "https://www.amazon.jobs",
+                "careers": "https://www.amazon.jobs",
+                "linkedin": "https://www.linkedin.com/company/amazon",
+                "hr_email": ""
+            },
 
-        recruiter = self._build_recruiter(company)
+            "Siemens": {
+                "website": "https://www.siemens.com",
+                "careers": "https://jobs.siemens.com",
+                "linkedin": "https://www.linkedin.com/company/siemens",
+                "hr_email": ""
+            },
 
-        recruiter["country"] = country
+            "ABB": {
+                "website": "https://global.abb",
+                "careers": "https://careers.abb",
+                "linkedin": "https://www.linkedin.com/company/abb",
+                "hr_email": ""
+            },
 
-        return recruiter
+            "Schneider Electric": {
+                "website": "https://www.se.com",
+                "careers": "https://careers.se.com",
+                "linkedin": "https://www.linkedin.com/company/schneider-electric",
+                "hr_email": ""
+            },
 
-    # --------------------------------------------------
-    # Recruiter Builder
-    # --------------------------------------------------
+            "Honeywell": {
+                "website": "https://www.honeywell.com",
+                "careers": "https://careers.honeywell.com",
+                "linkedin": "https://www.linkedin.com/company/honeywell",
+                "hr_email": ""
+            },
 
-    def _build_recruiter(self, company):
+            "Cisco": {
+                "website": "https://www.cisco.com",
+                "careers": "https://jobs.cisco.com",
+                "linkedin": "https://www.linkedin.com/company/cisco",
+                "hr_email": ""
+            },
 
-        slug = company.lower().replace(" ", "")
+            "Oracle": {
+                "website": "https://www.oracle.com",
+                "careers": "https://careers.oracle.com",
+                "linkedin": "https://www.linkedin.com/company/oracle",
+                "hr_email": ""
+            },
 
-        recruiter = {
-
-            "company": company,
-
-            "recruiter_name": "Talent Acquisition Team",
-
-            "recruiter_title": "Executive Hiring",
-
-            "recruiter_email":
-                f"careers@{slug}.com",
-
-            "hr_email":
-                f"hr@{slug}.com",
-
-            "careers_page":
-                f"https://www.{slug}.com/careers",
-
-            "company_website":
-                f"https://www.{slug}.com",
-
-            "linkedin_search":
-                self._linkedin_search(company),
-
-            "google_search":
-                self._google_search(company),
-
-            "contact_confidence":
-                "Medium",
-
-            "verified":
-                False,
-
-            "source":
-                "Generated"
+            "SAP": {
+                "website": "https://www.sap.com",
+                "careers": "https://jobs.sap.com",
+                "linkedin": "https://www.linkedin.com/company/sap",
+                "hr_email": ""
+            }
 
         }
 
-        return recruiter
+    def _clean_company(self, company):
 
-    # --------------------------------------------------
-    # LinkedIn Search
-    # --------------------------------------------------
+        company = company.strip()
 
-    def _linkedin_search(self, company):
+        company = re.sub(r"\s+", " ", company)
 
-        query = quote_plus(
-
-            f"{company} Talent Acquisition"
-
-        )
-
-        return (
-
-            "https://www.linkedin.com/search/results/"
-            f"people/?keywords={query}"
-
-        )
-
-    # --------------------------------------------------
-    # Google Search
-    # --------------------------------------------------
-
-    def _google_search(self, company):
-
-        query = quote_plus(
-
-            f"{company} recruiter"
-
-        )
-
-        return (
-
-            "https://www.google.com/search?q="
-
-            + query
-
-        )
-
-    # --------------------------------------------------
-    # Company Website
-    # --------------------------------------------------
-
-    def company_website(self, company):
-
-        slug = company.lower().replace(" ", "")
-
-        return f"https://www.{slug}.com"
-
-    # --------------------------------------------------
-    # Careers Page
-    # --------------------------------------------------
-
-    def careers_page(self, company):
-
-        slug = company.lower().replace(" ", "")
-
-        return f"https://www.{slug}.com/careers"
-
-    # --------------------------------------------------
-    # HR Email
-    # --------------------------------------------------
-
-    def hr_email(self, company):
-
-        slug = company.lower().replace(" ", "")
-
-        return f"hr@{slug}.com"
-
-    # --------------------------------------------------
-    # Recruiter Email
-    # --------------------------------------------------
-
-    def recruiter_email(self, company):
-
-        slug = company.lower().replace(" ", "")
-
-        return f"careers@{slug}.com"
-
-    # --------------------------------------------------
-    # Batch Enrichment
-    # --------------------------------------------------
+        return company
 
     def enrich_jobs(self, jobs):
 
@@ -183,9 +106,47 @@ class RecruiterIntelligence:
 
         for job in jobs:
 
-            recruiter = self.enrich_job(job)
+            company = self._clean_company(
+                job.get("company", "")
+            )
 
-            job.update(recruiter)
+            info = self.company_database.get(company)
+
+            if info:
+
+                job["company_website"] = info["website"]
+
+                job["careers_page"] = info["careers"]
+
+                job["linkedin_company"] = info["linkedin"]
+
+                job["hr_email"] = info["hr_email"]
+
+                job["recruiter_name"] = ""
+
+                job["recruiter_title"] = "Talent Acquisition"
+
+                job["recruiter_email"] = ""
+
+                job["contact_confidence"] = "High"
+
+            else:
+
+                job["company_website"] = ""
+
+                job["careers_page"] = ""
+
+                job["linkedin_company"] = ""
+
+                job["hr_email"] = ""
+
+                job["recruiter_name"] = ""
+
+                job["recruiter_title"] = ""
+
+                job["recruiter_email"] = ""
+
+                job["contact_confidence"] = "Low"
 
             enriched.append(job)
 

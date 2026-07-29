@@ -17,7 +17,8 @@ from modules.saved_jobs_manager import SavedJobsManager
 from modules.job_cache import JobCache
 from modules.search_progress import SearchProgress
 from modules.background_job_search import BackgroundJobSearch
-
+from modules.live_company_intelligence import LiveCompanyIntelligence	
+from modules.job_card_renderer import JobCardRenderer
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -188,6 +189,8 @@ application_tracker = ApplicationTracker()
 
 company_engine = CompanyIntelligence()
 
+live_company_engine = LiveCompanyIntelligence()
+
 salary_engine = SalaryIntelligence()
 
 recruiter_engine = RecruiterIntelligence()
@@ -201,6 +204,19 @@ job_cache = JobCache()
 search_progress = SearchProgress()
 
 background_search = BackgroundJobSearch()
+
+job_renderer = JobCardRenderer(
+    scoring_engine,
+    priority_engine,
+    skill_matcher,
+    salary_engine,
+    recruiter_engine,
+    company_engine,
+    resume_tailor,
+    application_assistant,
+    application_tracker,
+    saved_jobs_manager,
+)
 
 # --------------------------------------------------
 # JOB SEARCH ENGINE
@@ -238,6 +254,16 @@ if st.button(
             jobs = recruiter_engine.enrich_jobs(
                 jobs
             )
+
+            # ------------------------------------------
+            # Live Company Intelligence
+            # ------------------------------------------
+
+            jobs = [
+                live_company_engine.enrich(job)
+                for job in jobs
+            ]
+
 
             # ------------------------------------------
             # Remove Duplicate Jobs
@@ -519,6 +545,12 @@ if jobs:
         jobs[:display_limit]
 
     ):
+
+        job_renderer.render(
+           job,
+           index,
+           profile,
+        )
 
         role = job.get(
 
@@ -1116,17 +1148,11 @@ if jobs:
 
                 st.warning(str(e))
 
-        # --------------------------------------------------
-        # RAW JOB DETAILS
-        # --------------------------------------------------
 
-        with st.expander(
-            "📄 View Complete Job Details"
-        ):
+# --------------------------------------------------
+# RAW JOB DETAILS
+# --------------------------------------------------
 
-            st.json(job)
-
-        st.divider()
 
 # --------------------------------------------------
 # EXECUTIVE ANALYTICS
