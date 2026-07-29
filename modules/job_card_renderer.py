@@ -46,3 +46,39 @@ class JobCardRenderer:
             f"{job.get('company','Unknown')} • "
             f"{job.get('location', job.get('country',''))}"
         )
+
+        st.divider()
+
+        company_col1, company_col2 = st.columns(2)
+
+        with company_col1:
+
+            st.write(
+                f"⭐ Company Rating : {job.get('company_rating', 3)}/5"
+            )
+
+            if job.get("fortune500"):
+
+                st.success("🏢 Fortune 500")
+
+            else:
+
+                st.info("🏢 Standard Company")
+
+        with company_col2:
+
+            if job.get("visa_sponsorship"):
+
+                st.success("🌍 Visa Sponsorship")
+
+            else:
+
+                st.warning("No Visa Sponsorship")
+
+            if job.get("remote_friendly"):
+
+                st.success("🏠 Remote Friendly")
+
+            st.write(
+                f"📈 Hiring Trend : {job.get('hiring_trend', 'Unknown')}"
+            )

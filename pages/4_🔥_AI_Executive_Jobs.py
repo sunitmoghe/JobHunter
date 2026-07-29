@@ -546,7 +546,12 @@ if jobs:
 
     ):
 
-        
+        job_renderer.render(
+            job,
+            index,
+            profile,
+        )
+
         role = job.get(
 
             "role",
