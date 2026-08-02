@@ -1,27 +1,69 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import as_completed
+
+from modules.job_validator import JobValidator
+from modules.job_deduplicator import JobDeduplicator
 
 
 class ParallelSearchEngine:
 
-    def __init__(self, search_engine):
-
-        self.search_engine = search_engine
-
-    def search_roles(
-
+    def __init__(
         self,
-
-        roles,
-
+        engine,
         max_workers=5
-
     ):
 
-        jobs = []
+        self.engine = engine
+
+        self.max_workers = max_workers
+
+    def search_role(
+        self,
+        role
+    ):
+
+        try:
+
+            jobs = self.engine.search_jobs(
+                role
+            )
+
+            jobs = JobValidator.validate_jobs(
+                jobs
+            )
+
+            jobs = JobDeduplicator.remove_empty(
+                jobs
+            )
+
+            jobs = JobDeduplicator.deduplicate(
+                jobs
+            )
+
+            for job in jobs:
+
+                job["executive_role"] = role
+
+            return jobs
+
+        except Exception as e:
+
+            print(
+                f"Search Error ({role}) : {e}"
+            )
+
+            return []
+
+    def search_roles(
+        self,
+        roles
+    ):
+
+        all_jobs = []
 
         with ThreadPoolExecutor(
 
-            max_workers=max_workers
+            max_workers=self.max_workers
 
         ) as executor:
 
@@ -29,7 +71,7 @@ class ParallelSearchEngine:
 
                 executor.submit(
 
-                    self.search_engine.search_jobs,
+                    self.search_role,
 
                     role
 
@@ -45,24 +87,126 @@ class ParallelSearchEngine:
 
             ):
 
-                role = futures[future]
-
                 try:
 
-                    results = future.result()
+                    jobs = future.result()
 
-                    for job in results:
+                    all_jobs.extend(
 
-                        job["executive_role"] = role
-
-                        jobs.append(job)
-
-                except Exception as e:
-
-                    print(
-
-                        f"Search failed for {role}: {e}"
+                        jobs
 
                     )
 
+                except Exception as e:
+
+                    print(e)
+
+        all_jobs = JobDeduplicator.deduplicate(
+
+            all_jobs
+
+        )
+
+        return all_jobs
+
+    def search_single_country(
+        self,
+        roles,
+        country
+    ):
+
+        jobs = []
+
+        for role in roles:
+
+            try:
+
+                result = self.engine.search_jobs(
+
+                    role,
+
+                    [country]
+
+                )
+
+                result = JobValidator.validate_jobs(
+
+                    result
+
+                )
+
+                jobs.extend(
+
+                    result
+
+                )
+
+            except Exception:
+
+                pass
+
+        jobs = JobDeduplicator.deduplicate(
+
+            jobs
+
+        )
+
         return jobs
+
+    def search_multiple_countries(
+        self,
+        roles,
+        countries
+    ):
+
+        all_jobs = []
+
+        with ThreadPoolExecutor(
+
+            max_workers=len(countries)
+
+        ) as executor:
+
+            futures = {
+
+                executor.submit(
+
+                    self.search_single_country,
+
+                    roles,
+
+                    country
+
+                ): country
+
+                for country in countries
+
+            }
+
+            for future in as_completed(
+
+                futures
+
+            ):
+
+                try:
+
+                    jobs = future.result()
+
+                    all_jobs.extend(
+
+                        jobs
+
+                    )
+
+                except Exception:
+
+                    pass
+
+        all_jobs = JobDeduplicator.deduplicate(
+
+            all_jobs
+
+        )
+
+        return all_jobs

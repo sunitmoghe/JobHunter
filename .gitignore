@@ -30,13 +30,10 @@ temp_resume.pdf
 exports/
 reports/
 
-# -----------------------------
-# User Data
-# -----------------------------
-data/
-
-# -----------------------------
-# Operating System Files
-# -----------------------------
-.DS_Store
-Thumbs.db
+# VS Code settings (optional)
+.vscode/
+temp_resume.pdf
+database/job_cache.json
+database/saved_jobs.json
+data/*.pdf
+data/executive_profile.json

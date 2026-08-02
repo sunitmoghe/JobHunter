@@ -4,7 +4,6 @@ from modules.executive_scoring_engine import ExecutiveScoringEngine
 from modules.parallel_search_engine import ParallelSearchEngine
 from modules.job_cache import JobCache
 
-
 class ExecutiveAIAgent:
 
     def __init__(self):
@@ -180,7 +179,9 @@ if __name__ == "__main__":
 
     agent = ExecutiveAIAgent()
 
-    jobs = agent.search_all_roles(max_roles=5)
+    jobs = agent.search_all_roles(
+    max_roles=10
+)
 
     print("=" * 60)
 

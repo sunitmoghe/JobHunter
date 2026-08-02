@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-from modules.application_analytics import ApplicationAnalytics
-from modules.recruiter_manager import RecruiterManager
+from modules.executive_dashboard_engine import ExecutiveDashboardEngine
 from modules.executive_ai_agent import ExecutiveAIAgent
+from modules.executive_report_engine import ExecutiveReportEngine
+from modules.job_recommendation_engine import JobRecommendationEngine
 
 from modules.ui_components import (
     page_header,
@@ -11,6 +12,7 @@ from modules.ui_components import (
     section_header,
     divider,
     empty_state,
+    success_box,
 )
 
 st.set_page_config(
@@ -21,46 +23,62 @@ st.set_page_config(
 
 page_header(
     "🏠 Executive Career Dashboard",
-    "Your executive command overview."
+    "AI Powered Executive Career Command Center"
 )
 
-analytics = ApplicationAnalytics()
-summary = analytics.get_summary()
+dashboard = ExecutiveDashboardEngine()
+
+dashboard_data = dashboard.get_dashboard()
 
 agent = ExecutiveAIAgent()
+
 jobs = agent.search_all_roles(max_roles=2)
 
-recruiters = RecruiterManager().get_recruiters()
+report = ExecutiveReportEngine().generate(jobs)
+
+recommended_jobs = JobRecommendationEngine().top_recommendations(
+    jobs,
+    limit=10
+)
 
 metric_row(
     [
-        ("Live Jobs", len(jobs)),
-        ("Applications", summary["total"]),
-        ("Recruiters", len(recruiters)),
-        (
-            "Interviews",
-            summary["statuses"].get(
-                "Interview",
-                0,
-            ),
-        ),
+        ("Executive Score", f"{dashboard_data['executive_score']}%"),
+        ("Live Jobs", report["total_jobs"]),
+        ("Applications", dashboard_data["application_count"]),
+        ("Recruiters", dashboard_data["recruiter_count"]),
     ]
 )
 
 divider()
 
-section_header("🔥 Latest Executive Jobs")
+success_box(
+    f"""
+🌍 Best Executive Market
 
-df = pd.DataFrame(jobs)
+**{dashboard_data['best_market']}**
+
+High Priority Jobs: **{report['high_priority_jobs']}**
+
+Average Executive Score: **{report['average_score']}%**
+"""
+)
+
+divider()
+
+section_header("🔥 Recommended Executive Jobs")
+
+df = pd.DataFrame(recommended_jobs)
 
 if not df.empty:
 
     columns = [
-        c
-        for c in [
+        c for c in [
             "role",
             "company",
             "country",
+            "executive_score",
+            "priority",
         ]
         if c in df.columns
     ]
@@ -76,3 +94,9 @@ else:
     empty_state(
         "No executive jobs found."
     )
+
+divider()
+
+st.caption(
+    "JobHunter AI • Executive Career Platform"
+)

@@ -552,6 +552,8 @@ if jobs:
             profile,
         )
 
+        continue
+
         role = job.get(
 
             "role",

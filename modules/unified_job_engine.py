@@ -1,12 +1,14 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from modules.adzuna_api import AdzunaAPI
 from config.countries import COUNTRIES
+
 
 class UnifiedJobEngine:
 
     def __init__(self):
 
         self.adzuna = AdzunaAPI()
-
         self.countries = COUNTRIES
 
     def search_jobs(
@@ -15,40 +17,49 @@ class UnifiedJobEngine:
         selected_countries=None
     ):
 
-        jobs = []
-
         if selected_countries is None:
 
-            selected_countries = list(
-                self.countries.keys()
-            )
+            selected_countries = [
+                "Singapore",
+                "UAE",
+                "Germany",
+                "India",
+            ]
 
-        for country in selected_countries:
+        jobs = []
 
-            code = self.countries.get(country)
+        with ThreadPoolExecutor(max_workers=4) as executor:
 
-            if not code:
-                continue
+            futures = {}
 
-            try:
+            for country in selected_countries:
 
-                result = self.adzuna.search_jobs(
-                    role=role,
-                    country=code,
-                    results=10
-                )
+                code = self.countries.get(country)
 
-                jobs.extend(result)
+                if code:
 
-            except Exception as e:
+                    futures[
+                        executor.submit(
+                            self.adzuna.search_jobs,
+                            role=role,
+                            country=code,
+                            results=10
+                        )
+                    ] = country
 
-                print(
-                    f"Error searching {country}: {e}"
-                )
+            for future in as_completed(futures):
 
-        jobs = self.remove_duplicates(jobs)
+                country = futures[future]
 
-        return jobs
+                try:
+
+                    jobs.extend(future.result())
+
+                except Exception as e:
+
+                    print(f"Error searching {country}: {e}")
+
+        return self.remove_duplicates(jobs)
 
     def remove_duplicates(
         self,
@@ -61,16 +72,14 @@ class UnifiedJobEngine:
 
             key = (
                 job["role"].lower(),
-                job["company"].lower()
+                job["company"].lower(),
             )
 
             if key not in unique:
 
                 unique[key] = job
 
-        return list(
-            unique.values()
-        )
+        return list(unique.values())
 
 
 if __name__ == "__main__":
@@ -81,13 +90,7 @@ if __name__ == "__main__":
         "Head of Sales"
     )
 
-    print()
-
-    print(
-        f"TOTAL JOBS FOUND : {len(jobs)}"
-    )
-
-    print()
+    print(f"TOTAL JOBS FOUND : {len(jobs)}")
 
     for job in jobs[:20]:
 
@@ -96,5 +99,5 @@ if __name__ == "__main__":
             "-",
             job["company"],
             "-",
-            job["country"]
+            job["country"],
         )

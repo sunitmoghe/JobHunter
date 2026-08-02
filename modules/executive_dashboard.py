@@ -1,135 +1,141 @@
-from collections import Counter
+import pandas as pd
 
 
-class ExecutiveDashboard:
+class ExecutiveDashboardEngine:
 
-    def generate(self, jobs, saved_jobs=None):
+    def __init__(self):
+        pass
 
-        if saved_jobs is None:
-            saved_jobs = []
+    def calculate_kpis(
+        self,
+        applications=None,
+        recruiters=None,
+        executive_score=0
+    ):
 
-        total_jobs = len(jobs)
+        applications = applications or []
+        recruiters = recruiters or []
 
-        saved_count = len(saved_jobs)
+        app_df = pd.DataFrame(applications)
 
-        countries = Counter()
+        total_applications = len(app_df)
 
-        companies = Counter()
+        interview_probability = 0
+        priority_score = 0
 
-        total_score = 0
-
-        high_priority = 0
-
-        for job in jobs:
-
-            location = job.get(
-                "location",
-                "Unknown"
+        if (
+            not app_df.empty
+            and "interview_probability" in app_df.columns
+        ):
+            interview_probability = int(
+                app_df["interview_probability"].mean()
             )
 
-            company = job.get(
-                "company",
-                "Unknown"
+        if (
+            not app_df.empty
+            and "priority_score" in app_df.columns
+        ):
+            priority_score = int(
+                app_df["priority_score"].mean()
             )
 
-            countries[location] += 1
+        recruiter_count = len(recruiters)
 
-            companies[company] += 1
-
-            score = job.get(
-                "executive_score",
-                0
-            )
-
-            total_score += score
-
-            if score >= 90:
-
-                high_priority += 1
-
-        average_score = 0
-
-        if total_jobs:
-
-            average_score = round(
-
-                total_score / total_jobs,
-
-                2
-
-            )
+        momentum = int(
+            (
+                executive_score
+                + min(total_applications * 2, 100)
+                + min(recruiter_count * 5, 100)
+            ) / 3
+        )
 
         return {
-
-            "total_jobs": total_jobs,
-
-            "saved_jobs": saved_count,
-
-            "average_score": average_score,
-
-            "high_priority_jobs": high_priority,
-
-            "top_countries": countries.most_common(5),
-
-            "top_companies": companies.most_common(10)
-
+            "applications": total_applications,
+            "recruiters": recruiter_count,
+            "executive_score": executive_score,
+            "priority_score": priority_score,
+            "interview_probability": interview_probability,
+            "career_momentum": momentum,
         }
+
+    def application_status_breakdown(
+        self,
+        applications
+    ):
+
+        if not applications:
+            return {}
+
+        df = pd.DataFrame(applications)
+
+        if "status" not in df.columns:
+            return {}
+
+        return (
+            df.groupby("status")
+            .size()
+            .to_dict()
+        )
+
+    def top_countries(
+        self,
+        applications,
+        limit=10
+    ):
+
+        if not applications:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(applications)
+
+        if "country" not in df.columns:
+            return pd.DataFrame()
+
+        return (
+            df.groupby("country")
+            .size()
+            .reset_index(name="Applications")
+            .sort_values(
+                "Applications",
+                ascending=False
+            )
+            .head(limit)
+        )
+
+    def top_companies(
+        self,
+        applications,
+        limit=10
+    ):
+
+        if not applications:
+            return pd.DataFrame()
+
+        df = pd.DataFrame(applications)
+
+        if "company" not in df.columns:
+            return pd.DataFrame()
+
+        return (
+            df.groupby("company")
+            .size()
+            .reset_index(name="Applications")
+            .sort_values(
+                "Applications",
+                ascending=False
+            )
+            .head(limit)
+        )
 
 
 if __name__ == "__main__":
 
-    dashboard = ExecutiveDashboard()
-
-    jobs = [
-
-        {
-
-            "company": "Microsoft",
-
-            "location": "London",
-
-            "executive_score": 95
-
-        },
-
-        {
-
-            "company": "Google",
-
-            "location": "Singapore",
-
-            "executive_score": 91
-
-        },
-
-        {
-
-            "company": "Microsoft",
-
-            "location": "London",
-
-            "executive_score": 82
-
-        }
-
-    ]
-
-    saved = [
-
-        {
-
-            "company": "Microsoft"
-
-        }
-
-    ]
+    engine = ExecutiveDashboardEngine()
 
     print(
-
-        dashboard.generate(
-
-            jobs,
-
-            saved
-
+        engine.calculate_kpis(
+            applications=[],
+            recruiters=[],
+            executive_score=88
         )
+    )

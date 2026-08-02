@@ -3,19 +3,6 @@ import re
 
 class RecruiterIntelligence:
 
-    """
-    Recruiter & Company Contact Intelligence
-
-    Enriches executive jobs with:
-
-    • Company Website
-    • Careers Page
-    • HR Email
-    • Recruiter Email (if known)
-    • LinkedIn Company Page
-    • Contact Confidence
-    """
-
     def __init__(self):
 
         self.company_database = {
@@ -94,11 +81,41 @@ class RecruiterIntelligence:
 
     def _clean_company(self, company):
 
-        company = company.strip()
+        company = str(company).strip()
 
         company = re.sub(r"\s+", " ", company)
 
         return company
+
+    def find_recruiter(self, company):
+
+        company = self._clean_company(company)
+
+        info = self.company_database.get(company)
+
+        if info:
+
+            return {
+                "company_website": info["website"],
+                "careers_page": info["careers"],
+                "linkedin_company": info["linkedin"],
+                "hr_email": info["hr_email"],
+                "recruiter_name": "",
+                "recruiter_title": "Talent Acquisition",
+                "recruiter_email": "",
+                "contact_confidence": "High",
+            }
+
+        return {
+            "company_website": "",
+            "careers_page": "",
+            "linkedin_company": "",
+            "hr_email": "",
+            "recruiter_name": "",
+            "recruiter_title": "",
+            "recruiter_email": "",
+            "contact_confidence": "Low",
+        }
 
     def enrich_jobs(self, jobs):
 
@@ -106,47 +123,11 @@ class RecruiterIntelligence:
 
         for job in jobs:
 
-            company = self._clean_company(
+            recruiter = self.find_recruiter(
                 job.get("company", "")
             )
 
-            info = self.company_database.get(company)
-
-            if info:
-
-                job["company_website"] = info["website"]
-
-                job["careers_page"] = info["careers"]
-
-                job["linkedin_company"] = info["linkedin"]
-
-                job["hr_email"] = info["hr_email"]
-
-                job["recruiter_name"] = ""
-
-                job["recruiter_title"] = "Talent Acquisition"
-
-                job["recruiter_email"] = ""
-
-                job["contact_confidence"] = "High"
-
-            else:
-
-                job["company_website"] = ""
-
-                job["careers_page"] = ""
-
-                job["linkedin_company"] = ""
-
-                job["hr_email"] = ""
-
-                job["recruiter_name"] = ""
-
-                job["recruiter_title"] = ""
-
-                job["recruiter_email"] = ""
-
-                job["contact_confidence"] = "Low"
+            job.update(recruiter)
 
             enriched.append(job)
 
