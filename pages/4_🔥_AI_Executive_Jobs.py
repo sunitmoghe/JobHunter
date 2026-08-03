@@ -25,6 +25,8 @@ from modules.country_analytics import render_country_analytics
 from modules.saved_jobs_dashboard import render_saved_jobs_dashboard
 from modules.application_summary import render_application_summary
 from modules.cache_management import render_cache_management
+from modules.salary_dashboard import render_salary_dashboard
+from modules.sprint_dashboard import render_sprint_dashboard
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -55,30 +57,35 @@ col1, col2 = st.columns(2)
 
 with col1:
 
-    preferred_country = st.selectbox(
-        "Preferred Country",
-        [
-            "All",
-            "Singapore",
-            "UAE",
-            "Saudi Arabia",
-            "Qatar",
-            "Oman",
-            "Kuwait",
-            "Bahrain",
-            "Malaysia",
-            "Thailand",
-            "Vietnam",
-            "Indonesia",
-            "Germany",
-            "Netherlands",
-            "Poland",
-            "United Kingdom",
-            "Canada",
-            "Australia",
-        ],
-    )
-
+    selected_countries = st.multiselect(
+    "Search Countries",
+    options=[
+        "Singapore",
+        "UAE",
+        "Saudi Arabia",
+        "Qatar",
+        "Oman",
+        "Kuwait",
+        "Bahrain",
+        "Germany",
+        "Netherlands",
+        "Poland",
+        "United Kingdom",
+        "Canada",
+        "Australia",
+        "India",
+        "Malaysia",
+        "Thailand",
+        "Vietnam",
+        "Indonesia",
+    ],
+    default=[
+        "Singapore",
+        "UAE",
+        "Germany",
+    ]
+)
+    
 with col2:
 
     preferred_role = st.selectbox(
@@ -168,6 +175,8 @@ if profile_manager.profile_exists():
 
     profile = profile_manager.load_profile()
 
+    experience = profile.get("experience", 0)
+
 else:
 
     profile = {}
@@ -243,7 +252,9 @@ if st.button(
 
             agent = ExecutiveAIAgent()
 
-            jobs = agent.search_all_roles()
+            jobs = agent.search_all_roles(
+                selected_countries=selected_countries
+            )
 
             # ------------------------------------------
             # Company Intelligence
@@ -264,6 +275,10 @@ if st.button(
             # ------------------------------------------
             # Live Company Intelligence
             # ------------------------------------------
+
+            # TEMPORARILY DISABLED
+            # Live Company Intelligence is slowing down search.
+            #
 
             jobs = [
                 live_company_engine.enrich(job)
@@ -390,19 +405,6 @@ else:
 # --------------------------------------------------
 
 if jobs:
-
-    # ------------------------------------------
-    # Country Filter
-    # ------------------------------------------
-
-    if preferred_country != "All":
-
-        jobs = [
-            job
-            for job in jobs
-            if preferred_country.lower()
-            in job.get("country", "").lower()
-        ]
 
     # ------------------------------------------
     # Role Filter
@@ -556,271 +558,11 @@ render_jobs(
 
 render_executive_analytics(jobs)
 
-
-# --------------------------------------------------
-# SALARY INTELLIGENCE
-# --------------------------------------------------
-
-if jobs:
-
-    st.header("💰 Executive Salary Intelligence")
-
-    selected_job = st.selectbox(
-
-        "Select Job",
-
-        range(len(jobs)),
-
-        format_func=lambda x:
-
-        f"{jobs[x].get('role','')} - {jobs[x].get('company','')}"
-
-    )
-
-    selected = jobs[selected_job]
-
-    role = selected.get(
-
-        "role",
-
-        selected.get(
-
-            "title",
-
-            ""
-
-        )
-
-    )
-
-    country = selected.get(
-
-        "country",
-
-        "Singapore"
-
-    )
-
-    salary = salary_engine.get_salary_benchmark(
-
-        country,
-
-        role
-
-    )
-
-    if "average" in salary:
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-
-            st.metric(
-
-                "Low",
-
-                f"{salary['currency']} {salary['low']:,}"
-
-            )
-
-        with col2:
-
-            st.metric(
-
-                "Average",
-
-                f"{salary['currency']} {salary['average']:,}"
-
-            )
-
-        with col3:
-
-            st.metric(
-
-                "High",
-
-                f"{salary['currency']} {salary['high']:,}"
-
-            )
-
-    else:
-
-        st.warning(
-
-            salary.get(
-
-                "message",
-
-                "Salary benchmark unavailable."
-
-            )
-
-        )
-
-# --------------------------------------------------
-# OFFER COMPARISON
-# --------------------------------------------------
-
-    st.subheader("📈 Compare Your Offer")
-
-    offered_salary = st.number_input(
-
-        "Enter Offered Salary",
-
-        min_value=0,
-
-        step=1000
-
-    )
-
-    if offered_salary > 0:
-
-        comparison = salary_engine.compare_offer(
-
-            country,
-
-            role,
-
-            offered_salary
-
-        )
-
-        if "rating" in comparison:
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-
-                st.metric(
-
-                    "Market Average",
-
-                    f"{salary['currency']} {comparison['market_average']:,}"
-
-                )
-
-            with col2:
-
-                st.metric(
-
-                    "Difference",
-
-                    f"{comparison['difference_percentage']}%"
-
-                )
-
-            if comparison["rating"] == "Excellent Offer":
-
-                st.success(
-
-                    "🎉 Excellent Offer"
-
-                )
-
-            elif comparison["rating"] == "Good Offer":
-
-                st.info(
-
-                    "👍 Good Market Offer"
-
-                )
-
-            else:
-
-                st.warning(
-
-                    "⚠ Below Market Average"
-
-                )
-
-# --------------------------------------------------
-# EXECUTIVE MARKET POSITION
-# --------------------------------------------------
-
-    st.subheader("🎯 Executive Market Position")
-
-    recommendation = salary_engine.recommend_market_position(
-
-        experience,
-
-        "Executive"
-
-    )
-
-    st.success(
-
-        recommendation["level"]
-
-    )
-
-    st.write(
-
-        "### Recommended Roles"
-
-    )
-
-    for item in recommendation[
-
-        "recommended_roles"
-
-    ]:
-
-        st.write(
-
-            "•",
-
-            item
-
-        )
-
-# --------------------------------------------------
-# MARKET INSIGHTS
-# --------------------------------------------------
-
-    st.subheader("🌍 AI Market Intelligence")
-
-    if country == "Singapore":
-
-        st.success(
-
-            "Singapore remains one of the strongest executive hiring markets for technology, SaaS, Industrial Automation and Manufacturing."
-
-        )
-
-    elif country == "Germany":
-
-        st.info(
-
-            "Germany continues strong hiring across Industry 4.0, Manufacturing and Automation."
-
-        )
-
-    elif country == "UAE":
-
-        st.success(
-
-            "UAE has strong demand for enterprise sales leaders across Technology, Energy and Infrastructure."
-
-        )
-
-    elif country == "India":
-
-        st.info(
-
-            "India continues expanding executive hiring across SaaS, AI, Manufacturing and Telecom."
-
-        )
-
-    else:
-
-        st.info(
-
-            "Market intelligence is continuously improving."
-
-        )
-
-    st.divider()
-
+render_salary_dashboard(
+    jobs,
+    salary_engine,
+    experience,
+)
 # --------------------------------------------------
 # SAVED JOBS DASHBOARD
 # --------------------------------------------------
@@ -847,198 +589,8 @@ render_cache_management(
 )
 
 st.divider()
-# --------------------------------------------------
-# SPRINT 19 DASHBOARD
-# --------------------------------------------------
 
-st.header("🚀 Sprint 19 Intelligence Dashboard")
-
-dashboard_col1, dashboard_col2 = st.columns(2)
-
-with dashboard_col1:
-
-    st.success("✅ Company Intelligence")
-
-    st.success("✅ Salary Intelligence")
-
-    st.success("✅ Duplicate Detection")
-
-    st.success("✅ Saved Jobs")
-
-with dashboard_col2:
-
-    st.success("✅ Job Cache")
-
-    st.success("✅ Search Progress")
-
-    st.success("✅ Executive Analytics")
-
-    st.success("✅ AI Resume Tailoring")
-
-st.divider()
-
-# --------------------------------------------------
-# PLATFORM STATISTICS
-# --------------------------------------------------
-
-st.header("📊 Platform Statistics")
-
-if jobs:
-
-    st.write(
-
-        f"Executive Jobs Available : {len(jobs)}"
-
-    )
-
-    st.write(
-
-        f"Saved Jobs : {saved_stats['saved_jobs']}"
-
-    )
-
-    st.write(
-
-        f"Duplicate Jobs Removed : {duplicates_removed}"
-
-    )
-
-    st.write(
-
-        f"Cached Searches : {cache_stats['cached_roles']}"
-
-    )
-
-st.divider()
-
-# --------------------------------------------------
-# EMPTY STATE
-# --------------------------------------------------
-
-if not jobs and not st.session_state.search_completed:
-
-    st.info(
-        """
-👋 **Welcome to AI Executive Jobs**
-
-Click **🚀 Search Global Executive Jobs**
-to discover international executive opportunities.
-
-Powered by:
-
-• AI Executive Search Engine
-• Company Intelligence
-• Salary Intelligence
-• Duplicate Detection
-• Executive Scoring Engine
-• AI Resume Tailoring
-• Application Assistant
-• Saved Jobs Dashboard
-• Executive Analytics
-"""
-    )
-
-# --------------------------------------------------
-# SPRINT 19 FEATURES
-# --------------------------------------------------
-
-st.divider()
-
-st.header("🚀 Sprint 19 Features")
-
-feature_col1, feature_col2 = st.columns(2)
-
-with feature_col1:
-
-    st.success("✅ AI Executive Search")
-
-    st.success("✅ Company Intelligence")
-
-    st.success("✅ Salary Intelligence")
-
-    st.success("✅ Duplicate Job Detection")
-
-    st.success("✅ Executive Analytics")
-
-    st.success("✅ AI Resume Tailoring")
-
-with feature_col2:
-
-    st.success("✅ Saved Jobs Manager")
-
-    st.success("✅ Job Cache")
-
-    st.success("✅ Search Progress")
-
-    st.success("✅ Executive Score Engine")
-
-    st.success("✅ Application Assistant")
-
-    st.success("✅ Recruiter CRM Integration")
-
-# --------------------------------------------------
-# AI STATUS
-# --------------------------------------------------
-
-st.divider()
-
-st.subheader("🤖 AI Platform Status")
-
-status_col1, status_col2, status_col3 = st.columns(3)
-
-with status_col1:
-
-    st.metric(
-
-        "Sprint",
-
-        "19"
-
-    )
-
-with status_col2:
-
-    st.metric(
-
-        "Platform",
-
-        "Operational"
-
-    )
-
-with status_col3:
-
-    st.metric(
-
-        "AI Modules",
-
-        "13"
-
-    )
-
-# --------------------------------------------------
-# FUTURE ROADMAP
-# --------------------------------------------------
-
-with st.expander("🛣 Upcoming Sprint Roadmap"):
-
-    st.write("### Sprint 20")
-
-    st.write("• Live LinkedIn Executive Search")
-
-    st.write("• Executive Recruiter Finder")
-
-    st.write("• Executive Referral Engine")
-
-    st.write("• AI Cover Letter Optimiser")
-
-    st.write("• Salary Negotiation AI")
-
-    st.write("• Executive Networking Assistant")
-
-    st.write("• Interview Success Predictor")
-
-    st.write("• Executive Career Copilot")
+render_sprint_dashboard()
 
 # --------------------------------------------------
 # FOOTER

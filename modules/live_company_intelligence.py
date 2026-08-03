@@ -51,7 +51,7 @@ class LiveCompanyIntelligence:
 
             response = requests.get(
                 url,
-                timeout=8
+                timeout=2
             )
 
             if response.status_code == 200:

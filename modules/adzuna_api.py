@@ -51,12 +51,43 @@ class AdzunaAPI:
 
             return []
 
+        except requests.exceptions.HTTPError as e:
+
+            if response.status_code == 429:
+
+                print(f"Rate limit reached for {country}. Waiting 5 seconds...")
+
+                import time
+
+                time.sleep(5)
+
+                try:
+
+                    response = requests.get(
+                        url,
+                        timeout=2
+                    )
+
+                    response.raise_for_status()
+
+                    data = response.json()
+
+                except Exception:
+
+                    return []
+
+            else:
+
+                print(f"Adzuna HTTP Error for {country}: {e}")
+
+                return []
+
         except requests.exceptions.RequestException as e:
 
             print(f"Adzuna request failed for {country}: {e}")
 
             return []
-
+        
         jobs = []
 
         for item in data.get("results", []):

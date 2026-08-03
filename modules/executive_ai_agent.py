@@ -65,7 +65,8 @@ class ExecutiveAIAgent:
 
     def search_all_roles(
         self,
-        max_roles=None
+        max_roles=None,
+        selected_countries=None
     ):
 
         if max_roles is None:
@@ -77,7 +78,8 @@ class ExecutiveAIAgent:
             roles = EXECUTIVE_ROLES[:max_roles]
 
         jobs = self.parallel_engine.search_roles(
-            roles
+            roles,
+            selected_countries
         )
 
         executive_jobs = []

@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
 
 from modules.adzuna_api import AdzunaAPI
 from config.countries import COUNTRIES
@@ -11,11 +12,14 @@ class UnifiedJobEngine:
         self.adzuna = AdzunaAPI()
         self.countries = COUNTRIES
 
+
     def search_jobs(
         self,
         role,
         selected_countries=None
     ):
+
+        print(f"Searching role: {role}")
 
         if selected_countries is None:
 
@@ -28,11 +32,13 @@ class UnifiedJobEngine:
 
         jobs = []
 
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:
 
             futures = {}
 
             for country in selected_countries:
+
+                print(f"Searching {country} for {role}")
 
                 code = self.countries.get(country)
 
@@ -46,6 +52,8 @@ class UnifiedJobEngine:
                             results=10
                         )
                     ] = country
+                    
+                    time.sleep(0.4)
 
             for future in as_completed(futures):
 
@@ -55,9 +63,13 @@ class UnifiedJobEngine:
 
                     jobs.extend(future.result())
 
+                    print(f"Received jobs from {country}")
+
                 except Exception as e:
 
                     print(f"Error searching {country}: {e}")
+
+        print(f"Total jobs collected: {len(jobs)}")
 
         return self.remove_duplicates(jobs)
 
