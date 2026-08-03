@@ -4,7 +4,7 @@ import pandas as pd
 from modules.executive_dashboard_engine import ExecutiveDashboardEngine
 from modules.executive_ai_agent import ExecutiveAIAgent
 from modules.executive_report_engine import ExecutiveReportEngine
-from modules.job_recommendation_engine import JobRecommendationEngine
+from modules.job_recommendation import JobRecommendationEngine
 
 from modules.ui_components import (
     page_header,

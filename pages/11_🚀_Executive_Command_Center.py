@@ -4,6 +4,9 @@ import pandas as pd
 from modules.profile_manager import ProfileManager
 from modules.career_strategy_ai import CareerStrategyAI
 from modules.application_tracker import ApplicationTracker
+from modules.executive_dashboard_engine import ExecutiveDashboardEngine
+from modules.executive_ai_agent import ExecutiveAIAgent
+from modules.job_statistics import JobStatistics
 
 from modules.ui_components import (
     page_header,
@@ -30,6 +33,9 @@ page_header(
 profile_manager = ProfileManager()
 career_ai = CareerStrategyAI()
 tracker = ApplicationTracker()
+dashboard = ExecutiveDashboardEngine()
+
+agent = ExecutiveAIAgent()
 
 
 if profile_manager.profile_exists():
@@ -62,6 +68,11 @@ try:
 except Exception:
 
     applications = []
+live_jobs = agent.search_all_roles(max_roles=3)
+
+statistics = JobStatistics(live_jobs)
+
+dashboard_data = dashboard.get_dashboard()
 
 
 # --------------------------------------------------
@@ -76,26 +87,61 @@ metric_row(
     [
         (
             "Executive Score",
-            f"{strategy['executive_score']['overall_score']}%"
+            f"{dashboard_data['executive_score']}%"
+        ),
+        (
+            "Live Jobs",
+            len(live_jobs)
         ),
         (
             "Applications",
-            len(applications)
+            dashboard_data["application_count"]
         ),
         (
-            "Top Market",
-            strategy["best_markets"][0]["country"]
-        ),
-        (
-            "Experience",
-            f"{profile.get('experience',20)} Years"
+            "Recruiters",
+            dashboard_data["recruiter_count"]
         ),
     ]
 )
 
+divider()
+# --------------------------------------------------
+# LIVE EXECUTIVE OPPORTUNITIES
+# --------------------------------------------------
+
+section_header(
+    "🔥 Top Executive Opportunities"
+)
+
+if live_jobs:
+
+    live_df = pd.DataFrame(live_jobs)
+
+    columns = [
+        c
+        for c in [
+            "role",
+            "company",
+            "country",
+            "executive_score",
+            "priority",
+        ]
+        if c in live_df.columns
+    ]
+
+    st.dataframe(
+        live_df[columns],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+else:
+
+    empty_state(
+        "No executive opportunities found."
+    )
 
 divider()
-
 
 # --------------------------------------------------
 # TOP MARKETS
@@ -252,25 +298,25 @@ if applications:
     )
 
     metric_row(
-        [
-            (
-                "Applications",
-                len(df)
-            ),
-            (
-                "Average Priority",
-                f"{int(df['priority_score'].mean())}%"
-                if "priority_score" in df.columns
-                else "N/A"
-            ),
-            (
-                "Interview Probability",
-                f"{int(df['interview_probability'].mean())}%"
-                if "interview_probability" in df.columns
-                else "N/A"
-            ),
-        ]
-    )
+    [
+        (
+            "Executive Score",
+            f"{dashboard_data['executive_score']}%"
+        ),
+        (
+            "Live Jobs",
+            len(live_jobs)
+        ),
+        (
+            "Applications",
+            dashboard_data["application_count"]
+        ),
+        (
+            "Recruiters",
+            dashboard_data["recruiter_count"]
+        ),
+    ]
+)
 
 else:
 
@@ -324,6 +370,38 @@ success_box(
 
 divider()
 
+# --------------------------------------------------
+# LIVE JOB ANALYTICS
+# --------------------------------------------------
+
+section_header(
+    "📊 Live Job Intelligence"
+)
+
+stats_col1, stats_col2, stats_col3 = st.columns(3)
+
+with stats_col1:
+
+    st.metric(
+        "Companies",
+        statistics.companies()
+    )
+
+with stats_col2:
+
+    st.metric(
+        "Countries",
+        statistics.countries()
+    )
+
+with stats_col3:
+
+    st.metric(
+        "Average Executive Score",
+        statistics.average_score()
+    )
+
+divider()
 
 # --------------------------------------------------
 # ANALYTICS
