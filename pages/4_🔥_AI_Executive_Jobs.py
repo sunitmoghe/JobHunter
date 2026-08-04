@@ -28,6 +28,7 @@ from modules.cache_management import render_cache_management
 from modules.salary_dashboard import render_salary_dashboard
 from modules.sprint_dashboard import render_sprint_dashboard
 
+
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
@@ -37,6 +38,8 @@ st.set_page_config(
     page_icon="🔥",
     layout="wide"
 )
+
+resume_tailor = ResumeTailorEngine()
 
 st.title("🔥 AI Executive Live Job Recommendations")
 
@@ -362,17 +365,22 @@ else:
 # SEARCH PROGRESS
 # --------------------------------------------------
 
-progress_state = search_progress.get_state()
-
-if progress_state["running"]:
+if background_search.is_running():
 
     st.progress(
-        progress_state["progress"]
+        background_search.get_progress()
     )
 
-    st.caption(
-        f"Searching : {progress_state['current_role']}"
-    )
+    st.info
+    f"🔎 Searching Executive Role : {background_search.get_current_role()}"
+    
+    
+
+elif background_search.is_completed():
+
+    st.success(
+        f"✅ Background Search Completed ({len(background_search.get_jobs())} jobs)"
+    )    
 
 
 # --------------------------------------------------
@@ -604,7 +612,7 @@ JobHunter AI • Executive Career Intelligence Platform
 
 Version : Sprint 19
 
-Designed for Global Executive Careers
+Designed and Developed by : Sunit S Moghe
 
 © 2026 JobHunter AI
 """

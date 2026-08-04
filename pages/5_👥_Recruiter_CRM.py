@@ -139,11 +139,9 @@ with tab1:
 
 with tab2:
 
-
     try:
 
         recruiters = manager.get_recruiters()
-
 
     except Exception as e:
 
@@ -153,28 +151,38 @@ with tab2:
             f"Unable to load recruiters: {e}"
         )
 
-
     if recruiters:
 
+        search = st.text_input(
+            "🔍 Search Recruiter / Company"
+        )
+
+        if search:
+
+            recruiters = [
+
+                r
+
+                for r in recruiters
+
+                if search.lower() in str(r).lower()
+
+            ]
 
         df = pd.DataFrame(
             recruiters
         )
 
-
         st.dataframe(
             df,
-            use_container_width=True
+            width="stretch"
         )
 
-
     else:
-
 
         st.info(
             "No recruiters added yet."
         )
-
 
 
 # --------------------------------------------------

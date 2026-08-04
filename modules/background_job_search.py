@@ -20,6 +20,8 @@ class BackgroundJobSearch:
 
         self.thread = None
 
+        self.current_role = ""
+
     def start(self, agent, roles):
 
         if self.running:
@@ -45,6 +47,8 @@ class BackgroundJobSearch:
         all_jobs = []
 
         for role in roles:
+
+            self.current_role = role
 
             try:
 
@@ -91,6 +95,10 @@ class BackgroundJobSearch:
     def is_completed(self):
 
         return self.completed
+
+    def get_current_role(self):
+
+        return self.current_role
 
     def get_jobs(self):
 

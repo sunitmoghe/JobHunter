@@ -217,45 +217,53 @@ class SalaryIntelligence:
         }
 
 
+def recommend_market_position(
+    self,
+    experience_years,
+    leadership_level
+):
 
-    def recommend_market_position(
-        self,
-        experience_years,
-        leadership_level
-    ):
+    # Convert string experience like "23+ Years" to integer
+    if isinstance(experience_years, str):
+        import re
 
+        match = re.search(r"\d+", experience_years)
 
-        if experience_years >= 20:
+        if match:
+            experience_years = int(match.group())
+        else:
+            experience_years = 0
 
-            return {
-
-                "level": "Executive Leadership",
-
-                "recommended_roles": [
-
-                    "VP Sales",
-
-                    "Regional Sales Director",
-
-                    "Chief Revenue Officer",
-
-                    "Head of Operations"
-
-                ]
-
-            }
-
+    if experience_years >= 20:
 
         return {
 
-            "level": "Senior Management",
+            "level": "Executive Leadership",
 
             "recommended_roles": [
 
-                "Sales Director",
+                "VP Sales",
 
-                "Business Development Head"
+                "Regional Sales Director",
+
+                "Chief Revenue Officer",
+
+                "Head of Operations"
 
             ]
 
         }
+
+    return {
+
+        "level": "Senior Management",
+
+        "recommended_roles": [
+
+            "Sales Director",
+
+            "Business Development Head"
+
+        ]
+
+    }
