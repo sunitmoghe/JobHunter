@@ -7,128 +7,154 @@ class RecruiterIntelligence:
 
         self.company_database = {
 
-            "Microsoft": {
+            "microsoft": {
                 "website": "https://www.microsoft.com",
                 "careers": "https://careers.microsoft.com",
                 "linkedin": "https://www.linkedin.com/company/microsoft",
-                "hr_email": "askhr@microsoft.com"
+                "hr_email": "askhr@microsoft.com",
+                "recruiter": "Talent Acquisition Team"
             },
 
-            "Google": {
+            "google": {
                 "website": "https://about.google",
                 "careers": "https://careers.google.com",
                 "linkedin": "https://www.linkedin.com/company/google",
-                "hr_email": ""
+                "hr_email": "",
+                "recruiter": "Google Recruiting"
             },
 
-            "Amazon": {
+            "amazon": {
                 "website": "https://www.amazon.jobs",
                 "careers": "https://www.amazon.jobs",
                 "linkedin": "https://www.linkedin.com/company/amazon",
-                "hr_email": ""
+                "hr_email": "",
+                "recruiter": "Amazon Recruiting"
             },
 
-            "Siemens": {
-                "website": "https://www.siemens.com",
-                "careers": "https://jobs.siemens.com",
-                "linkedin": "https://www.linkedin.com/company/siemens",
-                "hr_email": ""
-            },
-
-            "ABB": {
-                "website": "https://global.abb",
-                "careers": "https://careers.abb",
-                "linkedin": "https://www.linkedin.com/company/abb",
-                "hr_email": ""
-            },
-
-            "Schneider Electric": {
-                "website": "https://www.se.com",
-                "careers": "https://careers.se.com",
-                "linkedin": "https://www.linkedin.com/company/schneider-electric",
-                "hr_email": ""
-            },
-
-            "Honeywell": {
-                "website": "https://www.honeywell.com",
-                "careers": "https://careers.honeywell.com",
-                "linkedin": "https://www.linkedin.com/company/honeywell",
-                "hr_email": ""
-            },
-
-            "Cisco": {
-                "website": "https://www.cisco.com",
-                "careers": "https://jobs.cisco.com",
-                "linkedin": "https://www.linkedin.com/company/cisco",
-                "hr_email": ""
-            },
-
-            "Oracle": {
+            "oracle": {
                 "website": "https://www.oracle.com",
                 "careers": "https://careers.oracle.com",
                 "linkedin": "https://www.linkedin.com/company/oracle",
-                "hr_email": ""
+                "hr_email": "",
+                "recruiter": "Oracle Talent Acquisition"
             },
 
-            "SAP": {
-                "website": "https://www.sap.com",
-                "careers": "https://jobs.sap.com",
-                "linkedin": "https://www.linkedin.com/company/sap",
-                "hr_email": ""
+            "siemens": {
+                "website": "https://www.siemens.com",
+                "careers": "https://jobs.siemens.com",
+                "linkedin": "https://www.linkedin.com/company/siemens",
+                "hr_email": "",
+                "recruiter": "Siemens Talent Acquisition"
             }
 
         }
 
-    def _clean_company(self, company):
+    # --------------------------------------------------
 
-        company = str(company).strip()
+    def clean_company(self, company):
 
-        company = re.sub(r"\s+", " ", company)
+        company = str(company).lower().strip()
+
+        company = re.sub(
+            r"\s+",
+            " ",
+            company
+        )
 
         return company
 
-    def find_recruiter(self, company):
+    # --------------------------------------------------
 
-        company = self._clean_company(company)
+    def find_recruiter(self, job):
+
+        company = self.clean_company(
+
+            job.get(
+                "company",
+                ""
+            )
+
+        )
 
         info = self.company_database.get(company)
 
         if info:
 
             return {
-                "company_website": info["website"],
-                "careers_page": info["careers"],
-                "linkedin_company": info["linkedin"],
-                "hr_email": info["hr_email"],
-                "recruiter_name": "",
-                "recruiter_title": "Talent Acquisition",
-                "recruiter_email": "",
-                "contact_confidence": "High",
+
+                "name": info["recruiter"],
+
+                "title": "Talent Acquisition",
+
+                "email": info["hr_email"],
+
+                "linkedin": info["linkedin"],
+
+                "confidence": "High"
+
             }
 
-        return {
-            "company_website": "",
-            "careers_page": "",
-            "linkedin_company": "",
-            "hr_email": "",
-            "recruiter_name": "",
-            "recruiter_title": "",
-            "recruiter_email": "",
-            "contact_confidence": "Low",
-        }
+        return None
+
+    # --------------------------------------------------
+
+    def enrich(self, job):
+
+        recruiter = self.find_recruiter(job)
+
+        if recruiter:
+
+            job["recruiter_found"] = True
+
+            job["recruiter_name"] = recruiter["name"]
+
+            job["recruiter_title"] = recruiter["title"]
+
+            job["recruiter_email"] = recruiter["email"]
+
+            job["linkedin_company"] = recruiter["linkedin"]
+
+            job["contact_confidence"] = recruiter["confidence"]
+
+        else:
+
+            job["recruiter_found"] = False
+
+            job["recruiter_name"] = ""
+
+            job["recruiter_title"] = ""
+
+            job["recruiter_email"] = ""
+
+            job["linkedin_company"] = ""
+
+            job["contact_confidence"] = "Low"
+
+        return job
+
+    # --------------------------------------------------
 
     def enrich_jobs(self, jobs):
 
-        enriched = []
+        return [
 
-        for job in jobs:
+            self.enrich(job)
 
-            recruiter = self.find_recruiter(
-                job.get("company", "")
-            )
+            for job in jobs
 
-            job.update(recruiter)
+        ]
 
-            enriched.append(job)
 
-        return enriched
+if __name__ == "__main__":
+
+    engine = RecruiterIntelligence()
+
+    sample = {
+
+        "company": "Microsoft",
+
+        "role": "Head of Sales"
+
+    }
+
+    print(engine.enrich(sample))

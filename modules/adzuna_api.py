@@ -22,7 +22,6 @@ class AdzunaAPI:
         if not self.app_id or not self.app_key:
 
             print("Adzuna credentials not configured.")
-
             return []
 
         url = (
@@ -48,7 +47,6 @@ class AdzunaAPI:
         except requests.exceptions.Timeout:
 
             print(f"Timeout while searching {country}")
-
             return []
 
         except requests.exceptions.HTTPError as e:
@@ -58,7 +56,6 @@ class AdzunaAPI:
                 print(f"Rate limit reached for {country}. Waiting 5 seconds...")
 
                 import time
-
                 time.sleep(5)
 
                 try:
@@ -79,59 +76,46 @@ class AdzunaAPI:
             else:
 
                 print(f"Adzuna HTTP Error for {country}: {e}")
-
                 return []
 
         except requests.exceptions.RequestException as e:
 
             print(f"Adzuna request failed for {country}: {e}")
-
             return []
-        
+
         jobs = []
 
         for item in data.get("results", []):
 
             jobs.append(
-
                 {
                     "role": item.get("title", ""),
-
-                    "company": item.get(
-                        "company",
-                        {}
-                    ).get(
+                    "company": item.get("company", {}).get(
                         "display_name",
                         "Unknown"
                     ),
-
-                    "location": item.get(
-                        "location",
-                        {}
-                    ).get(
+                    "country": country.upper(),
+                    "location": item.get("location", {}).get(
                         "display_name",
                         ""
                     ),
-
-                    "country": country.upper(),
-
                     "salary": (
-                        f"{item.get('salary_min', '')} - {item.get('salary_max', '')}"
+                        f"{item.get('salary_min','')} - {item.get('salary_max','')}"
                         if item.get("salary_min")
                         else "Not Disclosed"
                     ),
-
-                    "description": item.get(
-                        "description",
-                        ""
-                    ),
-
-                    "link": item.get(
-                        "redirect_url",
-                        ""
-                    )
+                    "description": item.get("description", ""),
+                    "apply_link": item.get("redirect_url", ""),
+                    "source": "Adzuna",
+                    "visa_sponsorship": False,
+                    "remote_friendly": False,
+                    "posted_date": item.get("created", ""),
+                    "employment_type": "",
+                    "experience_level": "",
+                    "executive_score": 0.0,
+                    "priority_score": 0.0,
+                    "jobhunter_score": 0.0,
                 }
-
             )
 
         return jobs

@@ -26,6 +26,7 @@ from modules.saved_jobs_dashboard import render_saved_jobs_dashboard
 from modules.application_summary import render_application_summary
 from modules.cache_management import render_cache_management
 from modules.salary_dashboard import render_salary_dashboard
+from modules.job_ranking_engine import JobRankingEngine
 from modules.sprint_dashboard import render_sprint_dashboard
 
 
@@ -213,6 +214,8 @@ salary_engine = SalaryIntelligence()
 
 recruiter_engine = RecruiterIntelligence()
 
+ranking_engine = JobRankingEngine()
+
 duplicate_detector = DuplicateJobDetector()
 
 saved_jobs_manager = SavedJobsManager()
@@ -247,6 +250,10 @@ if st.button(
     type="primary",
 ):
 
+    import time
+
+    search_start = time.time()
+
     search_progress.start()
 
     with st.spinner("Searching executive opportunities..."):
@@ -258,7 +265,7 @@ if st.button(
             jobs = agent.search_all_roles(
                 selected_countries=selected_countries
             )
-
+                        
             # ------------------------------------------
             # Company Intelligence
             # ------------------------------------------
@@ -288,7 +295,6 @@ if st.button(
                 for job in jobs
             ]
 
-
             # ------------------------------------------
             # Remove Duplicate Jobs
             # ------------------------------------------
@@ -302,6 +308,12 @@ if st.button(
             duplicates_removed = duplicate_result[
                 "duplicates_removed"
             ]
+
+            # ------------------------------------------
+            # AI JobHunter Ranking
+            # ------------------------------------------
+
+            jobs = ranking_engine.rank_jobs(jobs)
 
             # ------------------------------------------
             # Cache Results
@@ -321,6 +333,13 @@ if st.button(
             st.session_state.search_completed = True
 
             search_progress.finish()
+
+            search_end = time.time()
+
+            st.session_state.search_time = round(
+                search_end - search_start,
+                2
+            )
 
         except Exception as e:
 
@@ -371,11 +390,11 @@ if background_search.is_running():
         background_search.get_progress()
     )
 
-    st.info
-    f"🔎 Searching Executive Role : {background_search.get_current_role()}"
+    st.info(
+        f"🔎 Searching Executive Role : {background_search.get_current_role()}"
+    )
     
     
-
 elif background_search.is_completed():
 
     st.success(
@@ -554,12 +573,19 @@ if jobs:
 # DISPLAY EXECUTIVE JOBS
 # --------------------------------------------------
 
-render_jobs(
-    jobs=jobs,
-    profile=profile,
-    job_renderer=job_renderer,
-)
+if jobs:
 
+    render_jobs(
+        jobs=jobs,
+        profile=profile,
+        job_renderer=job_renderer,
+    )
+
+else:
+
+    st.warning("No jobs to display")
+    
+        
 # --------------------------------------------------
 # EXECUTIVE ANALYTICS
 # --------------------------------------------------

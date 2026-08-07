@@ -1,10 +1,10 @@
 import json
 import os
+import uuid
 from datetime import datetime
 
 
 class RecruiterManager:
-
 
     def __init__(self):
 
@@ -17,10 +17,6 @@ class RecruiterManager:
 
         self.ensure_database()
 
-
-
-    # --------------------------------------------------
-    # DATABASE INITIALISATION
     # --------------------------------------------------
 
     def ensure_database(self):
@@ -29,7 +25,6 @@ class RecruiterManager:
             self.database_dir,
             exist_ok=True
         )
-
 
         if not os.path.exists(self.file):
 
@@ -45,16 +40,11 @@ class RecruiterManager:
                     indent=4
                 )
 
-
-
-    # --------------------------------------------------
-    # LOAD RECRUITERS SAFELY
     # --------------------------------------------------
 
     def load_recruiters(self):
 
         self.ensure_database()
-
 
         try:
 
@@ -64,31 +54,18 @@ class RecruiterManager:
                 encoding="utf-8"
             ) as f:
 
-
                 data = json.load(f)
-
 
                 if isinstance(data, list):
 
                     return data
 
+        except Exception:
 
-                return []
+            pass
 
+        return []
 
-        except (
-            json.JSONDecodeError,
-            FileNotFoundError
-        ):
-
-
-            self.save_recruiters([])
-
-
-            return []
-
-    # --------------------------------------------------
-    # SAVE RECRUITERS SAFELY
     # --------------------------------------------------
 
     def save_recruiters(
@@ -96,15 +73,11 @@ class RecruiterManager:
         recruiters
     ):
 
-        self.ensure_database()
-
-
         with open(
             self.file,
             "w",
             encoding="utf-8"
         ) as f:
-
 
             json.dump(
                 recruiters,
@@ -113,10 +86,6 @@ class RecruiterManager:
                 ensure_ascii=False
             )
 
-
-
-    # --------------------------------------------------
-    # ADD RECRUITER
     # --------------------------------------------------
 
     def add_recruiter(
@@ -126,145 +95,159 @@ class RecruiterManager:
 
         recruiters = self.load_recruiters()
 
+        email = str(
 
-        email = recruiter.get(
-            "email",
-            ""
-        )
+            recruiter.get(
+                "email",
+                ""
+            )
 
+        ).strip().lower()
 
-        # Duplicate check
+        linkedin = str(
+
+            recruiter.get(
+                "linkedin",
+                ""
+            )
+
+        ).strip().lower()
 
         for existing in recruiters:
 
             if (
+
                 email
                 and
-                existing.get("email")
-                == email
+                existing.get(
+                    "email",
+                    ""
+                ).lower() == email
+
             ):
 
                 return existing
 
+            if (
 
+                linkedin
+                and
+                existing.get(
+                    "linkedin",
+                    ""
+                ).lower() == linkedin
 
-        recruiter_record = {
+            ):
 
+                return existing
+
+        record = {
+
+            "recruiter_id": str(uuid.uuid4()),
 
             "name": recruiter.get(
                 "name",
                 ""
             ),
 
-
             "company": recruiter.get(
                 "company",
                 ""
             ),
-
 
             "designation": recruiter.get(
                 "designation",
                 ""
             ),
 
+            "email": recruiter.get(
+                "email",
+                ""
+            ),
 
-            "email": email,
-
+            "phone": recruiter.get(
+                "phone",
+                ""
+            ),
 
             "linkedin": recruiter.get(
                 "linkedin",
                 ""
             ),
 
-
             "country": recruiter.get(
                 "country",
                 ""
             ),
 
-
-            "status": "New",
-
-
-            "last_contact": str(
-                datetime.now().date()
+            "status": recruiter.get(
+                "status",
+                "New"
             ),
 
+            "last_contact": "",
+
+            "next_followup": "",
 
             "notes": recruiter.get(
                 "notes",
                 ""
+            ),
+
+            "created_at": datetime.now().strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+
+            "updated_at": datetime.now().strftime(
+                "%Y-%m-%d %H:%M"
             )
 
         }
 
+        recruiters.append(record)
 
+        self.save_recruiters(recruiters)
 
-        recruiters.append(
-            recruiter_record
-        )
+        return record
 
-
-        self.save_recruiters(
-            recruiters
-        )
-
-
-        return recruiter_record
-
-
-
-    # --------------------------------------------------
-    # UPDATE RECRUITER STATUS
     # --------------------------------------------------
 
     def update_status(
         self,
-        index,
+        recruiter_id,
         status
     ):
 
-
         recruiters = self.load_recruiters()
 
+        for recruiter in recruiters:
 
-        if 0 <= index < len(recruiters):
+            if recruiter.get(
+                "recruiter_id"
+            ) == recruiter_id:
 
+                recruiter["status"] = status
 
-            recruiters[index]["status"] = status
+                recruiter["last_contact"] = datetime.now().strftime(
+                    "%Y-%m-%d"
+                )
 
+                recruiter["updated_at"] = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M"
+                )
 
-            recruiters[index]["last_contact"] = str(
-                datetime.now().date()
-            )
+                self.save_recruiters(recruiters)
 
-
-            self.save_recruiters(
-                recruiters
-            )
-
-
-            return True
-
-
+                return True
 
         return False
 
     # --------------------------------------------------
-    # GET ALL RECRUITERS
-    # --------------------------------------------------
 
-    def get_recruiters(
-        self
-    ):
+    def get_recruiters(self):
 
         return self.load_recruiters()
 
-
-
-    # --------------------------------------------------
-    # SEARCH RECRUITERS
     # --------------------------------------------------
 
     def search_recruiters(
@@ -272,61 +255,28 @@ class RecruiterManager:
         keyword
     ):
 
-        recruiters = self.load_recruiters()
-
-
-        keyword = str(
-            keyword
-        ).lower()
-
-
+        keyword = str(keyword).lower()
 
         results = []
 
+        for recruiter in self.load_recruiters():
 
-        for recruiter in recruiters:
+            searchable = " ".join([
 
+                recruiter.get("name", ""),
+                recruiter.get("company", ""),
+                recruiter.get("designation", ""),
+                recruiter.get("country", ""),
+                recruiter.get("email", "")
 
-            searchable = (
-
-                recruiter.get(
-                    "name",
-                    ""
-                )
-                +
-                recruiter.get(
-                    "company",
-                    ""
-                )
-                +
-                recruiter.get(
-                    "designation",
-                    ""
-                )
-                +
-                recruiter.get(
-                    "country",
-                    ""
-                )
-
-            ).lower()
-
-
+            ]).lower()
 
             if keyword in searchable:
 
-                results.append(
-                    recruiter
-                )
-
-
+                results.append(recruiter)
 
         return results
 
-
-
-    # --------------------------------------------------
-    # FILTER BY COUNTRY
     # --------------------------------------------------
 
     def recruiters_by_country(
@@ -334,109 +284,113 @@ class RecruiterManager:
         country
     ):
 
-        recruiters = self.load_recruiters()
-
-
         return [
 
             recruiter
 
-            for recruiter in recruiters
+            for recruiter in self.load_recruiters()
 
             if recruiter.get(
                 "country",
                 ""
-            )
-            ==
-            country
+            ).lower() == country.lower()
 
         ]
 
-
-
-    # --------------------------------------------------
-    # DASHBOARD STATISTICS
     # --------------------------------------------------
 
-    def get_statistics(
-        self
-    ):
+    def get_statistics(self):
 
         recruiters = self.load_recruiters()
 
+        stats = {
 
-        total = len(
-            recruiters
-        )
+            "total_recruiters": len(recruiters),
 
+            "new": 0,
 
-        contacted = len(
+            "contacted": 0,
 
-            [
+            "responded": 0,
 
-                r
+            "interview": 0,
 
-                for r in recruiters
-
-                if r.get(
-                    "status"
-                )
-                ==
-                "Contacted"
-
-            ]
-
-        )
-
-
-        responded = len(
-
-            [
-
-                r
-
-                for r in recruiters
-
-                if r.get(
-                    "status"
-                )
-                ==
-                "Responded"
-
-            ]
-
-        )
-
-
-
-        return {
-
-            "total_recruiters": total,
-
-            "contacted": contacted,
-
-            "responded": responded,
-
-            "response_rate":
-
-                round(
-
-                    (
-                        responded
-                        /
-                        total
-                        *
-                        100
-
-                    )
-
-                    if total > 0
-
-                    else 0,
-
-                    1
-
-                )
+            "closed": 0
 
         }
 
+        for recruiter in recruiters:
+
+            status = recruiter.get(
+                "status",
+                "New"
+            ).lower()
+
+            if status == "new":
+
+                stats["new"] += 1
+
+            elif status == "contacted":
+
+                stats["contacted"] += 1
+
+            elif status == "responded":
+
+                stats["responded"] += 1
+
+            elif status == "interview":
+
+                stats["interview"] += 1
+
+            elif status == "closed":
+
+                stats["closed"] += 1
+
+        stats["response_rate"] = round(
+
+            (
+
+                stats["responded"]
+                /
+                stats["total_recruiters"]
+
+            ) * 100,
+
+            1
+
+        ) if stats["total_recruiters"] else 0
+
+        return stats
+
+
+if __name__ == "__main__":
+
+    manager = RecruiterManager()
+
+    manager.add_recruiter(
+
+        {
+
+            "name": "John Smith",
+
+            "company": "Microsoft",
+
+            "designation": "Talent Acquisition",
+
+            "email": "john@microsoft.com",
+
+            "country": "Singapore",
+
+            "linkedin": "linkedin.com/in/johnsmith"
+
+        }
+
+    )
+
+    print()
+
+    print(manager.get_statistics())
+
+    print()
+
+    print(manager.get_recruiters())

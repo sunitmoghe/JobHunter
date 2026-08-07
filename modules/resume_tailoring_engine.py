@@ -3,29 +3,47 @@ class ResumeTailoringEngine:
     def __init__(self):
         pass
 
-    def extract_keywords(self, job):
+    # --------------------------------------------------
 
-        text = (
-            job.get("description", "")
-            + " "
-            + job.get("role", "")
-        )
+    def extract_keywords(
+        self,
+        job
+    ):
 
-        words = text.split()
+        text = " ".join(
+
+            [
+
+                str(job.get("role", "")),
+                str(job.get("title", "")),
+                str(job.get("description", "")),
+                str(job.get("industry", ""))
+
+            ]
+
+        ).lower()
 
         keywords = []
 
-        for word in words:
+        for word in text.split():
 
-            word = word.strip(",.()").lower()
+            word = word.strip(",.()[]{}:;!?/")
 
-            if len(word) > 4:
+            if len(word) < 5:
 
-                if word not in keywords:
+                continue
 
-                    keywords.append(word)
+            if word.isdigit():
 
-        return keywords[:30]
+                continue
+
+            if word not in keywords:
+
+                keywords.append(word)
+
+        return keywords[:40]
+
+    # --------------------------------------------------
 
     def tailor_resume(
         self,
@@ -33,28 +51,68 @@ class ResumeTailoringEngine:
         job
     ):
 
+        resume_lower = resume_text.lower()
+
         keywords = self.extract_keywords(job)
 
-        suggestions = []
+        missing = [
 
-        for keyword in keywords:
+            keyword
 
-            if keyword.lower() not in resume_text.lower():
+            for keyword in keywords
 
-                suggestions.append(keyword)
+            if keyword not in resume_lower
+
+        ]
+
+        matched = [
+
+            keyword
+
+            for keyword in keywords
+
+            if keyword in resume_lower
+
+        ]
+
+        ats_score = round(
+
+            (
+
+                len(matched)
+                /
+                max(len(keywords), 1)
+
+            ) * 100,
+
+            1
+
+        )
 
         return {
 
-            "missing_keywords": suggestions,
+            "ats_score": ats_score,
+
+            "matched_keywords": matched,
+
+            "missing_keywords": missing,
 
             "recommended_keywords": keywords,
 
             "tailored_summary":
 
-            (
-                "Executive leader with extensive experience aligned "
-                "to this opportunity. Resume should emphasize: "
-                + ", ".join(keywords[:10])
-            )
+                "Executive leader with strong commercial, operational and strategic leadership experience aligned to "
+
+                + job.get(
+                    "role",
+                    job.get(
+                        "title",
+                        "this opportunity"
+                    )
+                )
+
+                + ". Prioritise these keywords: "
+
+                + ", ".join(keywords[:12])
 
         }

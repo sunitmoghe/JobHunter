@@ -1,6 +1,5 @@
 class SalaryIntelligence:
 
-
     def __init__(self):
 
         self.salary_database = {
@@ -27,7 +26,6 @@ class SalaryIntelligence:
 
             },
 
-
             "UAE": {
 
                 "VP Sales": {
@@ -44,7 +42,6 @@ class SalaryIntelligence:
 
             },
 
-
             "Germany": {
 
                 "VP Sales": {
@@ -60,7 +57,6 @@ class SalaryIntelligence:
                 }
 
             },
-
 
             "India": {
 
@@ -80,8 +76,6 @@ class SalaryIntelligence:
 
         }
 
-
-
     def get_salary_benchmark(
         self,
         country,
@@ -93,12 +87,10 @@ class SalaryIntelligence:
             {}
         )
 
-
         role_data = country_data.get(
             role,
             {}
         )
-
 
         if role_data:
 
@@ -118,7 +110,6 @@ class SalaryIntelligence:
 
             }
 
-
         return {
 
             "country": country,
@@ -129,13 +120,10 @@ class SalaryIntelligence:
 
         }
 
-
-
     def get_currency(
         self,
         country
     ):
-
 
         currencies = {
 
@@ -149,13 +137,10 @@ class SalaryIntelligence:
 
         }
 
-
         return currencies.get(
             country,
             "USD"
         )
-
-
 
     def compare_offer(
         self,
@@ -164,37 +149,27 @@ class SalaryIntelligence:
         offered_salary
     ):
 
-
         benchmark = self.get_salary_benchmark(
             country,
             role
         )
 
-
         if "average" not in benchmark:
-
             return benchmark
 
-
-
         average = benchmark["average"]
-
 
         if offered_salary >= average * 1.15:
 
             rating = "Excellent Offer"
 
-
         elif offered_salary >= average:
 
             rating = "Good Offer"
 
-
         else:
 
             rating = "Below Market"
-
-
 
         return {
 
@@ -205,65 +180,78 @@ class SalaryIntelligence:
             "rating": rating,
 
             "difference_percentage": round(
-                (
-                    (offered_salary - average)
-                    /
-                    average
-                )
-                * 100,
+                ((offered_salary - average) / average) * 100,
                 2
             )
 
         }
 
+    def recommend_market_position(
+        self,
+        experience_years,
+        leadership_level=None
+    ):
 
-def recommend_market_position(
-    self,
-    experience_years,
-    leadership_level
-):
+        if isinstance(experience_years, str):
 
-    # Convert string experience like "23+ Years" to integer
-    if isinstance(experience_years, str):
-        import re
+            import re
 
-        match = re.search(r"\d+", experience_years)
+            match = re.search(r"\d+", experience_years)
 
-        if match:
-            experience_years = int(match.group())
+            if match:
+
+                experience_years = int(match.group())
+
+            else:
+
+                experience_years = 0
+
+        if experience_years >= 20:
+
+            return {
+
+                "level": "Executive Leadership",
+
+                "recommended_roles": [
+
+                    "CEO",
+                    "COO",
+                    "Chief Revenue Officer",
+                    "VP Sales",
+                    "Regional Sales Director",
+                    "Head of Operations"
+
+                ]
+
+            }
+
+        elif experience_years >= 12:
+
+            return {
+
+                "level": "Senior Leadership",
+
+                "recommended_roles": [
+
+                    "Head of Sales",
+                    "Sales Director",
+                    "Business Development Director"
+
+                ]
+
+            }
+
         else:
-            experience_years = 0
 
-    if experience_years >= 20:
+            return {
 
-        return {
+                "level": "Management",
 
-            "level": "Executive Leadership",
+                "recommended_roles": [
 
-            "recommended_roles": [
+                    "Sales Manager",
+                    "Business Manager"
 
-                "VP Sales",
+                ]
 
-                "Regional Sales Director",
-
-                "Chief Revenue Officer",
-
-                "Head of Operations"
-
-            ]
-
-        }
-
-    return {
-
-        "level": "Senior Management",
-
-        "recommended_roles": [
-
-            "Sales Director",
-
-            "Business Development Head"
-
-        ]
-
-    }
+            }

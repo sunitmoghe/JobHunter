@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+import uuid
 
 
 class SavedJobsManager:
@@ -16,6 +17,8 @@ class SavedJobsManager:
 
         self.ensure_database()
 
+    # --------------------------------------------------
+
     def ensure_database(self):
 
         os.makedirs(
@@ -23,9 +26,7 @@ class SavedJobsManager:
             exist_ok=True
         )
 
-        if not os.path.exists(
-            self.file
-        ):
+        if not os.path.exists(self.file):
 
             with open(
                 self.file,
@@ -38,6 +39,8 @@ class SavedJobsManager:
                     f,
                     indent=4
                 )
+
+    # --------------------------------------------------
 
     def load_jobs(self):
 
@@ -57,10 +60,9 @@ class SavedJobsManager:
 
             return []
 
-    def save_jobs(
-        self,
-        jobs
-    ):
+    # --------------------------------------------------
+
+    def save_jobs(self, jobs):
 
         with open(
             self.file,
@@ -75,10 +77,9 @@ class SavedJobsManager:
                 ensure_ascii=False
             )
 
-    def save_job(
-        self,
-        job
-    ):
+    # --------------------------------------------------
+
+    def save_job(self, job):
 
         jobs = self.load_jobs()
 
@@ -134,11 +135,19 @@ class SavedJobsManager:
 
                 return False
 
+        job["job_id"] = str(uuid.uuid4())
+
         job["saved_date"] = datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
 
+        job["last_updated"] = job["saved_date"]
+
         job["application_status"] = "Saved"
+
+        job["favorite"] = False
+
+        job["notes"] = ""
 
         jobs.append(job)
 
@@ -146,16 +155,13 @@ class SavedJobsManager:
 
         return True
 
+    # --------------------------------------------------
+
     def remove_job(
-
         self,
-
         company,
-
         role,
-
         location
-
     ):
 
         jobs = self.load_jobs()
@@ -171,9 +177,7 @@ class SavedJobsManager:
                 job.get(
                     "company",
                     ""
-                ).lower()
-
-                == company.lower()
+                ).lower() == company.lower()
 
                 and
 
@@ -183,18 +187,14 @@ class SavedJobsManager:
                         "title",
                         ""
                     )
-                ).lower()
-
-                == role.lower()
+                ).lower() == role.lower()
 
                 and
 
                 job.get(
                     "location",
                     ""
-                ).lower()
-
-                == location.lower()
+                ).lower() == location.lower()
 
             ):
 
@@ -208,15 +208,74 @@ class SavedJobsManager:
 
         return removed
 
+    # --------------------------------------------------
+
+    def update_status(
+        self,
+        job_id,
+        status
+    ):
+
+        jobs = self.load_jobs()
+
+        for job in jobs:
+
+            if job.get("job_id") == job_id:
+
+                job["application_status"] = status
+
+                job["last_updated"] = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+        self.save_jobs(jobs)
+
+    # --------------------------------------------------
+
     def statistics(self):
 
         jobs = self.load_jobs()
 
-        return {
+        stats = {
 
-            "saved_jobs": len(jobs)
+            "saved_jobs": len(jobs),
+
+            "applied": 0,
+
+            "interview": 0,
+
+            "offer": 0,
+
+            "rejected": 0
 
         }
+
+        for job in jobs:
+
+            status = str(
+                job.get(
+                    "application_status",
+                    ""
+                )
+            ).lower()
+
+            if status == "applied":
+
+                stats["applied"] += 1
+
+            elif status == "interview":
+
+                stats["interview"] += 1
+
+            elif status == "offer":
+
+                stats["offer"] += 1
+
+            elif status == "rejected":
+
+                stats["rejected"] += 1
+
+        return stats
 
 
 if __name__ == "__main__":
@@ -235,10 +294,4 @@ if __name__ == "__main__":
 
     manager.save_job(sample)
 
-    print()
-
     print(manager.statistics())
-
-    print()
-
-    print(manager.load_jobs())

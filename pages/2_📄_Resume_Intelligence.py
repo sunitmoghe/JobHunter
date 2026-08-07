@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 
 from modules.profile_pipeline import process_resume
@@ -27,230 +28,117 @@ page_header(
 )
 
 uploaded_resume = st.file_uploader(
-    "Upload Resume (PDF)",
-    type=["pdf"],
+    "Upload Resume",
+    type=["pdf", "docx", "doc"]
 )
 
 if uploaded_resume:
 
-    with open(
-        "temp_resume.pdf",
-        "wb"
-    ) as f:
+    extension = os.path.splitext(uploaded_resume.name)[1].lower()
 
-        f.write(
-            uploaded_resume.getbuffer()
-        )
+    temp_file = f"temp_resume{extension}"
 
-    with st.spinner(
-        "Analysing resume and creating executive profile..."
-    ):
+    with open(temp_file, "wb") as f:
+        f.write(uploaded_resume.getbuffer())
 
-        profile = process_resume(
-            "temp_resume.pdf"
-        )
+    with st.spinner("Analysing resume..."):
 
-        profile_manager = ProfileManager()
+        profile = process_resume(temp_file)
 
-        profile_manager.save_profile(
-            profile
-        )
+        ProfileManager().save_profile(profile)
 
-    success_box(
-        "✅ Executive Profile Created Successfully"
-    )
+    success_box("Executive Profile Created Successfully")
 
-    info_box(
-        "💾 Executive profile saved successfully for all JobHunter modules."
-    )
+    info_box("Profile saved successfully.")
 
     divider()
 
-    section_header(
-        "👤 Executive Profile"
-    )
+    section_header("Executive Profile")
 
     left, right = st.columns(2)
 
     with left:
-
-        st.write(
-            "**Name:**",
-            profile.get(
-                "name",
-                "Not Available"
-            )
-        )
-
-        st.write(
-            "**Email:**",
-            profile.get(
-                "email",
-                "Not Available"
-            )
-        )
-
-        st.write(
-            "**Phone:**",
-            profile.get(
-                "phone",
-                "Not Available"
-            )
-        )
-
-        st.write(
-            "**Experience:**",
-            profile.get(
-                "experience",
-                "Not Available"
-            )
-        )
+        st.write("**Name:**", profile.get("name",""))
+        st.write("**Email:**", profile.get("email",""))
+        st.write("**Phone:**", profile.get("phone",""))
+        st.write("**Experience:**", profile.get("experience",""))
 
     with right:
-
-        st.write(
-            "**LinkedIn:**",
-            profile.get(
-                "linkedin",
-                "Not Available"
-            )
-        )
-
-        st.write(
-            "**Location:**",
-            profile.get(
-                "location",
-                "Not Available"
-            )
-        )
-
-        st.write(
-            "**Current Role:**",
-            profile.get(
-                "current_role",
-                "Not Available"
-            )
-        )
-
-        st.write(
-            "**Industry:**",
-            profile.get(
-                "industry",
-                "Not Available"
-            )
-        )
+        st.write("**LinkedIn:**", profile.get("linkedin",""))
+        st.write("**Location:**", profile.get("location",""))
+        st.write("**Current Role:**", profile.get("current_role",""))
+        st.write("**Industry:**", profile.get("industry",""))
 
     divider()
 
-    section_header(
-        "🛠 Skills Detected"
-    )
+    section_header("Skills")
 
-    skills = profile.get(
-        "skills",
-        []
-    )
+    skills = profile.get("skills", [])
 
     if skills:
 
         cols = st.columns(3)
 
-        for index, skill in enumerate(skills):
-
-            with cols[index % 3]:
-
+        for i, skill in enumerate(skills):
+            with cols[i % 3]:
                 success_box(skill)
 
     else:
-
-        empty_state(
-            "No skills detected."
-        )
+        empty_state("No skills detected.")
 
     divider()
 
-    section_header(
-        "🧠 AI Executive Intelligence"
-    )
+    ai = AIResumeIntelligence()
 
-    ai_engine = AIResumeIntelligence()
+    result = ai.analyze_profile(profile)
 
-    ai_analysis = ai_engine.analyze_profile(
-        profile
-    )
-
-    metric_row(
-        [
-            (
-                "Executive Positioning",
-                f"{ai_analysis['positioning_score']}%"
-            )
-        ]
-    )
+    metric_row([
+        ("Executive Positioning", f"{result['positioning_score']}%")
+    ])
 
     divider()
 
-    section_header(
-        "📝 Executive Summary"
-    )
+    section_header("Executive Summary")
 
-    info_box(
-        ai_analysis["executive_summary"]
-    )
+    info_box(result["executive_summary"])
 
-    left, right = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    with left:
+    with c1:
 
-        section_header(
-            "💪 Leadership Strengths"
-        )
+        section_header("Leadership Strengths")
 
-        for item in ai_analysis[
-            "leadership_strengths"
-        ]:
-
+        for item in result["leadership_strengths"]:
             success_box(item)
 
-    with right:
+    with c2:
 
-        section_header(
-            "🚀 Recommended Executive Roles"
-        )
+        section_header("Recommended Roles")
 
-        for role in ai_analysis[
-            "recommended_roles"
-        ]:
-
-            st.write(
-                "🔥",
-                role
-            )
+        for role in result["recommended_roles"]:
+            st.write("🔥", role)
 
     divider()
 
-    section_header(
-        "⚠ Keyword Improvement Areas"
-    )
+    section_header("Keyword Gaps")
 
-    for keyword in ai_analysis[
-        "keyword_gaps"
-    ]:
-
-        warning_box(keyword)
+    for item in result["keyword_gaps"]:
+        warning_box(item)
 
     divider()
 
-    with st.expander(
-        "📊 Complete Executive Profile"
-    ):
+    with st.expander("Complete Executive Profile"):
 
-        st.json(
-            profile
-        )
+         safe_profile = {}
+
+    for k, v in profile.items():
+
+        if isinstance(v, (str, int, float, bool, list, dict)) or v is None:
+
+            safe_profile[k] = v
+
+    st.json(safe_profile)
 
 else:
 
-    empty_state(
-        "Please upload a PDF resume to begin analysis."
-    )
+    empty_state("Upload a PDF, DOCX or DOC resume.")

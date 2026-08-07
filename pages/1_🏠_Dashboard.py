@@ -50,6 +50,19 @@ metric_row(
     ]
 )
 
+st.markdown("### 📈 Executive Career Snapshot")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.info(f"🌍 Best Market\n\n{dashboard_data['best_market']}")
+
+with c2:
+    st.success(f"🎯 High Priority Jobs\n\n{report['high_priority_jobs']}")
+
+with c3:
+    st.warning(f"⭐ Average Executive Score\n\n{report['average_score']}%")
+
 divider()
 
 success_box(

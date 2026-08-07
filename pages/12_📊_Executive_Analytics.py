@@ -1,490 +1,259 @@
 import streamlit as st
 import pandas as pd
 
-from modules.application_tracker import ApplicationTracker
-from modules.profile_manager import ProfileManager
-from modules.career_strategy_ai import CareerStrategyAI
-
-from modules.ui_components import (
-    page_header,
-    section_header,
-    metric_row,
-    success_box,
-    warning_box,
-    info_box,
-    divider,
-    empty_state,
-)
-
-
 st.set_page_config(
     page_title="Executive Analytics",
     page_icon="📊",
-    layout="wide",
+    layout="wide"
 )
 
+st.title("📊 Executive Analytics")
 
-page_header(
-    "📊 Executive Analytics Dashboard",
-    "Executive Intelligence • Analytics • Career Insights"
-)
+jobs = st.session_state.get("executive_jobs", [])
 
+applications = st.session_state.get("applications", [])
 
-tracker = ApplicationTracker()
-profile_manager = ProfileManager()
-career_ai = CareerStrategyAI()
-
-
-# --------------------------------------------------
-# PROFILE
-# --------------------------------------------------
-
-if profile_manager.profile_exists():
-
-    profile = profile_manager.load_profile()
-
-else:
-
-    profile = {
-        "experience": 23,
-        "skills": [
-            "Sales",
-            "Leadership",
-            "P&L",
-            "SaaS",
-        ],
-    }
-
-
-strategy = career_ai.career_recommendation(
-    profile
-)
-
-
-# --------------------------------------------------
-# APPLICATIONS
-# --------------------------------------------------
-
-try:
-
-    applications = tracker.load_applications()
-
-except Exception:
-
-    applications = []
-
-
-if not applications:
-
-    empty_state(
-        "No applications available for analytics."
-    )
-
+if not jobs:
+    st.warning("Search jobs first from AI Executive Jobs.")
     st.stop()
 
+jobs_df = pd.DataFrame(jobs)
 
-df = pd.DataFrame(
-    applications
-)
+st.subheader("Executive Job Analytics")
 
+col1, col2, col3, col4 = st.columns(4)
 
-# --------------------------------------------------
-# KPI DASHBOARD
-# --------------------------------------------------
-
-section_header(
-    "📈 Executive KPIs"
-)
-
-
-metric_row(
-    [
-        (
-            "Applications",
-            len(df)
-        ),
-
-        (
-            "Avg Priority",
-            f"{int(df['priority_score'].mean())}%"
-            if "priority_score" in df.columns
-            else "--"
-        ),
-
-        (
-            "Interview Probability",
-            f"{int(df['interview_probability'].mean())}%"
-            if "interview_probability" in df.columns
-            else "--"
-        ),
-
-        (
-            "Executive Score",
-            f"{strategy['executive_score']['overall_score']}%"
-        ),
-    ]
-)
-
-
-divider()
-
-
-# --------------------------------------------------
-# APPLICATION ANALYTICS
-# --------------------------------------------------
-
-section_header(
-    "🌍 Application Analytics"
-)
-
-
-left, right = st.columns(2)
-
-
-with left:
-
-    st.write(
-        "### Applications by Country"
+with col1:
+    st.metric(
+        "Live Jobs",
+        len(jobs_df)
     )
 
-    if "country" in df.columns:
-
-        country_df = (
-            df.groupby("country")
-            .size()
-            .reset_index(
-                name="Applications"
-            )
-            .sort_values(
-                "Applications",
-                ascending=False
-            )
-        )
-
-        st.dataframe(
-            country_df,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    else:
-
-        info_box(
-            "Country information unavailable."
-        )
-
-
-with right:
-
-    st.write(
-        "### Applications by Company"
+with col2:
+    st.metric(
+        "Companies",
+        jobs_df["company"].nunique() if "company" in jobs_df else 0
     )
 
-    if "company" in df.columns:
-
-        company_df = (
-            df.groupby("company")
-            .size()
-            .reset_index(
-                name="Applications"
-            )
-            .sort_values(
-                "Applications",
-                ascending=False
-            )
-            .head(10)
-        )
-
-        st.dataframe(
-            company_df,
-            use_container_width=True,
-            hide_index=True,
-        )
-
-    else:
-
-        info_box(
-            "Company information unavailable."
-        )
-
-
-divider()
-
-
-# --------------------------------------------------
-# PRIORITY OPPORTUNITIES
-# --------------------------------------------------
-
-section_header(
-    "⭐ Highest Priority Opportunities"
-)
-
-
-if "priority_score" in df.columns:
-
-    top_priority = (
-        df.sort_values(
-            "priority_score",
-            ascending=False
-        )
-        .head(10)
+with col3:
+    st.metric(
+        "Countries",
+        jobs_df["country"].nunique() if "country" in jobs_df else 0
     )
 
+with col4:
+    if "executive_score" in jobs_df:
+        st.metric(
+            "Avg Executive Score",
+            round(jobs_df["executive_score"].mean(),1)
+        )
 
-    columns = [
+st.divider()
+
+st.subheader("Top Countries")
+
+if "country" in jobs_df:
+
+    st.bar_chart(
+        jobs_df["country"].value_counts()
+    )
+
+st.divider()
+
+st.subheader("Top Companies")
+
+if "company" in jobs_df:
+
+    st.bar_chart(
+        jobs_df["company"].value_counts().head(10)
+    )
+
+st.divider()
+
+st.subheader("Executive Score Distribution")
+
+if "executive_score" in jobs_df:
+
+    st.line_chart(
+        jobs_df["executive_score"]
+    )
+
+st.divider()
+
+st.subheader("Visa Sponsorship")
+
+if "visa_sponsorship" in jobs_df:
+
+    visa = jobs_df["visa_sponsorship"].value_counts()
+
+    st.bar_chart(visa)
+
+st.divider()
+
+st.subheader("Remote Jobs")
+
+if "remote_friendly" in jobs_df:
+
+    remote = jobs_df["remote_friendly"].value_counts()
+
+    st.bar_chart(remote)
+
+st.divider()
+
+st.subheader("Highest Executive Scores")
+
+if "executive_score" in jobs_df:
+
+    top = jobs_df.sort_values(
+        "executive_score",
+        ascending=False
+    )
+
+    cols = [
         c for c in [
             "role",
             "company",
             "country",
-            "priority_score",
-            "interview_probability",
+            "executive_score"
         ]
-        if c in top_priority.columns
+        if c in top.columns
     ]
 
+    st.dataframe(
+        top[cols].head(20),
+        use_container_width=True,
+        hide_index=True
+    )
+
+st.divider()
+
+st.divider()
+
+st.subheader("🌍 Executive Jobs Table")
+
+columns = [
+    c for c in [
+        "role",
+        "company",
+        "country",
+        "executive_score",
+        "jobhunter_score",
+        "visa_sponsorship",
+        "remote_friendly"
+    ]
+    if c in jobs_df.columns
+]
+
+st.dataframe(
+    jobs_df[columns],
+    use_container_width=True,
+    hide_index=True
+)
+
+st.divider()
+
+st.subheader("🏆 Top 10 Executive Jobs")
+
+if "executive_score" in jobs_df:
+
+    top10 = jobs_df.sort_values(
+        "executive_score",
+        ascending=False
+    ).head(10)
 
     st.dataframe(
-        top_priority[columns],
+        top10[columns],
+        use_container_width=True,
+        hide_index=True
+    )
+
+st.divider()
+
+st.subheader("💰 Salary Intelligence")
+
+if "salary" in jobs_df.columns:
+
+    salary_df = jobs_df[jobs_df["salary"].notna()]
+
+    if not salary_df.empty:
+
+        st.dataframe(
+            salary_df[
+                [
+                    c for c in [
+                        "role",
+                        "company",
+                        "country",
+                        "salary"
+                    ]
+                    if c in salary_df.columns
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    else:
+
+        st.info("No salary information available.")
+
+else:
+
+    st.info("Salary column not found.")
+
+st.divider()
+
+st.subheader("🏢 Executive Hiring Countries")
+
+if "country" in jobs_df.columns:
+
+    countries = (
+        jobs_df["country"]
+        .value_counts()
+        .reset_index()
+    )
+
+    countries.columns = [
+        "Country",
+        "Jobs",
+    ]
+
+    st.dataframe(
+        countries,
         use_container_width=True,
         hide_index=True,
     )
 
-else:
+st.divider()
 
-    info_box(
-        "Priority score data unavailable."
-    )
+st.subheader("🌍 Visa Sponsorship Opportunities")
 
+if "visa_sponsorship" in jobs_df.columns:
 
-divider()
-
-
-# --------------------------------------------------
-# INTERVIEW INTELLIGENCE
-# --------------------------------------------------
-
-section_header(
-    "🎯 Interview Intelligence"
-)
-
-
-if "interview_probability" in df.columns:
-
-
-    high = len(
-        df[
-            df["interview_probability"] >= 80
-        ]
-    )
-
-
-    medium = len(
-        df[
-            (
-                df["interview_probability"] >= 60
-            )
-            &
-            (
-                df["interview_probability"] < 80
-            )
-        ]
-    )
-
-
-    low = len(
-        df[
-            df["interview_probability"] < 60
-        ]
-    )
-
-
-    metric_row(
-        [
-            (
-                "High Probability",
-                high
-            ),
-            (
-                "Medium Probability",
-                medium
-            ),
-            (
-                "Low Probability",
-                low
-            ),
-        ]
-    )
-
-
-else:
-
-    info_box(
-        "Interview probability data unavailable."
-    )
-
-
-divider()
-
-
-# --------------------------------------------------
-# AI INSIGHTS
-# --------------------------------------------------
-
-section_header(
-    "🤖 AI Executive Insights"
-)
-
-
-best_market = strategy[
-    "best_markets"
-][0]
-
-
-success_box(
-    f"""
-Executive Readiness Score:
-{strategy['executive_score']['overall_score']}%
-
-Best Relocation Market:
-{best_market['country']}
-
-Relocation Score:
-{best_market['score']}%
-
-Recommendation:
-
-Focus applications on {best_market['country']}.
-Continue targeting Director, VP, CRO,
-COO and Country Manager opportunities.
-"""
-)
-
-
-divider()
-
-
-# --------------------------------------------------
-# MARKETS
-# --------------------------------------------------
-
-section_header(
-    "🌍 Top Recommended Executive Markets"
-)
-
-
-market_df = pd.DataFrame(
-    [
-        {
-            "Country": market["country"],
-            "Relocation Score": market["score"],
-            "Career Fit": market["details"]["career_fit"],
-            "Salary Fit": market["details"]["salary_fit"],
-            "Visa Fit": market["details"]["visa_fit"],
-            "Family Fit": market["details"]["family_fit"],
-            "Market Demand": market["details"]["market_demand"],
-        }
-
-        for market in strategy[
-            "best_markets"
-        ]
+    visa_jobs = jobs_df[
+        jobs_df["visa_sponsorship"] == True
     ]
-)
 
+    if not visa_jobs.empty:
 
-st.dataframe(
-    market_df,
-    use_container_width=True,
-    hide_index=True,
-)
+        cols = [
+            c for c in [
+                "role",
+                "company",
+                "country",
+                "executive_score",
+            ]
+            if c in visa_jobs.columns
+        ]
 
-
-divider()
-
-
-# --------------------------------------------------
-# STRENGTHS
-# --------------------------------------------------
-
-left, right = st.columns(2)
-
-
-with left:
-
-    section_header(
-        "💪 Executive Strengths"
-    )
-
-    for strength in strategy["strengths"]:
-
-        success_box(
-            strength
+        st.dataframe(
+            visa_jobs[cols],
+            use_container_width=True,
+            hide_index=True,
         )
 
+    else:
 
-with right:
+        st.info("No visa sponsorship jobs found.")
 
-    section_header(
-        "⚠ Executive Development Areas"
-    )
-
-    for gap in strategy["gaps"]:
-
-        warning_box(
-            gap
-        )
-
-
-divider()
-
-
-# --------------------------------------------------
-# ACTION PLAN
-# --------------------------------------------------
-
-section_header(
-    "📅 Recommended Actions"
-)
-
-
-plan = strategy["action_plan"]
-
-cols = st.columns(3)
-
-
-for col, month in zip(
-    cols,
-    [
-        "Month 1",
-        "Month 2",
-        "Month 3",
-    ]
-):
-
-    with col:
-
-        info_box(
-            month
-        )
-
-        for task in plan.get(
-            month,
-            []
-        ):
-
-            st.write(
-                "•",
-                task
-            )
-
-
-divider()
-
-
-success_box(
-    "✅ Executive Analytics Dashboard operational."
-)
-
-
-st.caption(
-    "JobHunter AI • Executive Analytics Suite"
-)
+st.success("Executive Analytics Ready")

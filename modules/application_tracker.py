@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from datetime import datetime
 
 
@@ -15,6 +16,8 @@ class ApplicationTracker:
         )
 
         self.ensure_database()
+
+    # --------------------------------------------------
 
     def ensure_database(self):
 
@@ -37,6 +40,8 @@ class ApplicationTracker:
                     indent=4
                 )
 
+    # --------------------------------------------------
+
     def load_applications(self):
 
         self.ensure_database()
@@ -55,20 +60,18 @@ class ApplicationTracker:
 
                     return data
 
-                return []
+        except Exception:
 
-        except (json.JSONDecodeError, FileNotFoundError):
+            pass
 
-            self.save_applications([])
+        return []
 
-            return []
+    # --------------------------------------------------
 
     def save_applications(
         self,
         applications
     ):
-
-        self.ensure_database()
 
         with open(
             self.file,
@@ -83,16 +86,67 @@ class ApplicationTracker:
                 ensure_ascii=False
             )
 
-    def add_application(
+    # --------------------------------------------------
+
+    def mark_applied(
         self,
-        job,
-        score,
-        interview_probability
+        job
     ):
 
         applications = self.load_applications()
 
+        company = job.get(
+            "company",
+            ""
+        ).lower()
+
+        role = job.get(
+            "role",
+            job.get(
+                "title",
+                ""
+            )
+        ).lower()
+
+        country = job.get(
+            "country",
+            ""
+        ).lower()
+
+        # Prevent duplicate applications
+
+        for app in applications:
+
+            if (
+
+                app.get(
+                    "company",
+                    ""
+                ).lower() == company
+
+                and
+
+                app.get(
+                    "role",
+                    ""
+                ).lower() == role
+
+                and
+
+                app.get(
+                    "country",
+                    ""
+                ).lower() == country
+
+            ):
+
+                return app
+
+        now = datetime.now()
+
         application = {
+
+            "application_id": str(uuid.uuid4()),
 
             "company": job.get(
                 "company",
@@ -101,7 +155,10 @@ class ApplicationTracker:
 
             "role": job.get(
                 "role",
-                ""
+                job.get(
+                    "title",
+                    ""
+                )
             ),
 
             "country": job.get(
@@ -109,19 +166,62 @@ class ApplicationTracker:
                 ""
             ),
 
-            "status": "Applied",
-
-            "priority_score": score,
-
-            "interview_probability": interview_probability,
-
-            "application_date": str(
-                datetime.now().date()
+            "location": job.get(
+                "location",
+                ""
             ),
 
-            "recruiter": "",
+            "status": "Applied",
 
-            "notes": ""
+            "priority_score": job.get(
+                "priority_score",
+                0
+            ),
+
+            "executive_score": job.get(
+                "executive_score",
+                0
+            ),
+
+            "jobhunter_score": job.get(
+                "jobhunter_score",
+                0
+            ),
+
+            "application_date": now.strftime(
+                "%Y-%m-%d"
+            ),
+
+            "last_updated": now.strftime(
+                "%Y-%m-%d %H:%M"
+            ),
+
+            "interview_date": "",
+
+            "follow_up_date": "",
+
+            "offer_date": "",
+
+            "recruiter": job.get(
+                "recruiter_name",
+                ""
+            ),
+
+            "notes": "",
+
+            "history": [
+
+                {
+
+                    "date": now.strftime(
+                        "%Y-%m-%d %H:%M"
+                    ),
+
+                    "status": "Applied"
+
+                }
+
+            ]
 
         }
 
@@ -131,20 +231,144 @@ class ApplicationTracker:
 
         return application
 
+    # --------------------------------------------------
+
     def update_status(
         self,
-        index,
-        status
+        application_id,
+        new_status
     ):
 
         applications = self.load_applications()
 
-        if 0 <= index < len(applications):
+        updated = False
 
-            applications[index]["status"] = status
+        now = datetime.now().strftime(
+            "%Y-%m-%d %H:%M"
+        )
+
+        for application in applications:
+
+            if application.get(
+                "application_id"
+            ) == application_id:
+
+                application["status"] = new_status
+
+                application["last_updated"] = now
+
+                application.setdefault(
+                    "history",
+                    []
+                ).append(
+
+                    {
+
+                        "date": now,
+
+                        "status": new_status
+
+                    }
+
+                )
+
+                updated = True
+
+                break
+
+        if updated:
 
             self.save_applications(applications)
 
+        return updated
+
+    # --------------------------------------------------
+
     def get_applications(self):
 
-        return self.load_applications()
+        applications = self.load_applications()
+
+        applications.sort(
+
+            key=lambda x: x.get(
+                "application_date",
+                ""
+            ),
+
+            reverse=True
+
+        )
+
+        return applications
+
+    # --------------------------------------------------
+
+    def statistics(self):
+
+        applications = self.load_applications()
+
+        stats = {
+
+            "total": len(applications),
+
+            "applied": 0,
+
+            "interview": 0,
+
+            "offer": 0,
+
+            "rejected": 0
+
+        }
+
+        for app in applications:
+
+            status = app.get(
+                "status",
+                ""
+            ).lower()
+
+            if status == "applied":
+
+                stats["applied"] += 1
+
+            elif status == "interview":
+
+                stats["interview"] += 1
+
+            elif status == "offer":
+
+                stats["offer"] += 1
+
+            elif status == "rejected":
+
+                stats["rejected"] += 1
+
+        return stats
+
+
+if __name__ == "__main__":
+
+    tracker = ApplicationTracker()
+
+    sample = {
+
+        "company": "Microsoft",
+
+        "role": "Head of Sales",
+
+        "country": "Singapore",
+
+        "priority_score": 95,
+
+        "executive_score": 92,
+
+        "jobhunter_score": 94,
+
+        "recruiter_name": "Talent Acquisition"
+
+    }
+
+    tracker.mark_applied(sample)
+
+    print(tracker.statistics())

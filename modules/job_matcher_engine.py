@@ -1,106 +1,92 @@
-from modules.database import DatabaseManager
 from modules.skill_intelligence import SkillIntelligence
-
 
 
 class JobMatcherEngine:
 
+    def __init__(self):
 
-    def calculate_match(self, profile, job):
+        self.skill_engine = SkillIntelligence()
 
-        if profile is None:
+    # --------------------------------------------------
+
+    def calculate_match(
+        self,
+        profile,
+        job
+    ):
+
+        if not profile:
+
             raise Exception(
                 "No executive profile found."
             )
 
+        profile_skills = self.skill_engine.normalize_skills(
 
-        skill_engine = SkillIntelligence()
+            profile.get(
+                "skills",
+                []
+            )
 
-
-        profile_skills = skill_engine.normalize_skills(
-            profile["skills"]
         )
 
-
-        job_skills = skill_engine.normalize_skills(
-            job["skills"].split(",")
+        raw_job_skills = job.get(
+            "skills",
+            []
         )
 
+        if isinstance(raw_job_skills, str):
+
+            raw_job_skills = [
+
+                skill.strip()
+
+                for skill in raw_job_skills.split(",")
+
+                if skill.strip()
+
+            ]
+
+        job_skills = self.skill_engine.normalize_skills(
+            raw_job_skills
+        )
 
         matched = profile_skills.intersection(
             job_skills
         )
 
-
         missing = job_skills.difference(
             profile_skills
         )
 
-
         score = 0
 
-        if len(job_skills) > 0:
+        if job_skills:
 
-            score = int(
-                (len(matched) / len(job_skills)) * 100
+            score = round(
+
+                (
+
+                    len(matched)
+                    /
+                    len(job_skills)
+
+                ) * 100,
+
+                1
+
             )
-
 
         return {
 
             "score": score,
 
-            "matched": list(matched),
+            "matched": sorted(list(matched)),
 
-            "missing": list(missing)
+            "missing": sorted(list(missing)),
+
+            "matched_count": len(matched),
+
+            "missing_count": len(missing)
 
         }
-
-
-
-def test_match():
-
-    db = DatabaseManager()
-
-
-    profile = db.get_latest_profile()
-
-
-    db.cursor.execute(
-        """
-        SELECT role, company, country, skills
-        FROM jobs
-        LIMIT 1
-        """
-    )
-
-
-    row = db.cursor.fetchone()
-
-
-    job = {
-
-        "role": row[0],
-        "company": row[1],
-        "country": row[2],
-        "skills": row[3]
-
-    }
-
-
-    matcher = JobMatcherEngine()
-
-
-    result = matcher.calculate_match(
-        profile,
-        job
-    )
-
-
-    print(result)
-
-
-
-if __name__ == "__main__":
-
-    test_match()

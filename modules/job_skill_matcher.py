@@ -1,84 +1,63 @@
-import re
-
-
 class JobSkillMatcher:
 
-    def extract_matching_skills(
-        self,
-        resume_skills,
-        job_description
-    ):
+    def __init__(self):
+        pass
 
-        resume = {
-            s.lower().strip()
-            for s in resume_skills
-        }
+    def match(self, profile, job):
+        """
+        Simple ATS Skill Matching
+        """
 
-        jd = job_description.lower()
+        profile_text = str(profile).lower()
+
+        job_text = (
+            str(job.get("description", "")) +
+            " " +
+            str(job.get("role", ""))
+        ).lower()
+
+        common_skills = [
+            "sales",
+            "leadership",
+            "operations",
+            "customer service",
+            "business development",
+            "strategy",
+            "crm",
+            "erp",
+            "saas",
+            "forecasting",
+            "p&l",
+            "key account",
+            "negotiation",
+            "executive",
+            "management",
+        ]
 
         matched = []
+
         missing = []
 
-        words = set(
-            re.findall(
-                r"[a-zA-Z0-9+#.-]+",
-                jd
-            )
-        )
+        for skill in common_skills:
 
-        for skill in sorted(resume):
+            if skill in profile_text and skill in job_text:
+                matched.append(skill)
 
-            if skill in jd:
-                matched.append(skill.title())
-
-        for word in sorted(words):
-
-            if (
-                len(word) > 3
-                and word not in resume
-                and word.isalpha()
-            ):
-                missing.append(word.title())
-
-        missing = missing[:20]
+            elif skill in job_text:
+                missing.append(skill)
 
         score = 0
 
-        if matched or missing:
+        if len(common_skills):
 
             score = round(
-                (len(matched) /
-                 (len(matched) + len(missing))) * 100,
-                2
+                len(matched) /
+                len(common_skills) *
+                100
             )
 
         return {
-
-            "match_score": score,
-
-            "matched": matched,
-
-            "missing": missing,
-
-            "interview_probability":
-                self.interview_probability(score)
+            "score": score,
+            "matched_skills": matched,
+            "missing_skills": missing,
         }
-
-    def interview_probability(
-        self,
-        score
-    ):
-
-        if score >= 90:
-            return 95
-
-        elif score >= 80:
-            return 90
-
-        elif score >= 70:
-            return 82
-
-        elif score >= 60:
-            return 70
-
-        return 55

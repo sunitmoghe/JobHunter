@@ -20,5 +20,101 @@
         "application_date": "2026-07-26",
         "recruiter": "",
         "notes": ""
+    },
+    {
+        "application_id": "b1848794-2ed2-4cf2-b528-37f0af2a10d9",
+        "company": "Microsoft",
+        "role": "Head of Sales",
+        "country": "Singapore",
+        "location": "",
+        "status": "Applied",
+        "priority_score": 95,
+        "executive_score": 92,
+        "jobhunter_score": 94,
+        "application_date": "2026-08-05",
+        "last_updated": "2026-08-05 15:08",
+        "interview_date": "",
+        "follow_up_date": "",
+        "offer_date": "",
+        "recruiter": "Talent Acquisition",
+        "notes": "",
+        "history": [
+            {
+                "date": "2026-08-05 15:08",
+                "status": "Applied"
+            }
+        ]
+    },
+    {
+        "application_id": "0cbf5ed4-3c32-41d1-91a6-795e23ece1e8",
+        "company": "Proteros Biostructures",
+        "role": "Director / Vice President / Senior Vice President Business Development – United Kingdom (gn)",
+        "country": "DE",
+        "location": "Planegg, München (Kreis)",
+        "status": "Applied",
+        "priority_score": 54.1,
+        "executive_score": 72.91,
+        "jobhunter_score": 54.1,
+        "application_date": "2026-08-06",
+        "last_updated": "2026-08-06 22:20",
+        "interview_date": "",
+        "follow_up_date": "",
+        "offer_date": "",
+        "recruiter": "",
+        "notes": "",
+        "history": [
+            {
+                "date": "2026-08-06 22:20",
+                "status": "Applied"
+            }
+        ]
+    },
+    {
+        "application_id": "bf02aabd-6b43-4314-88bf-6bff63ed950b",
+        "company": "beckman coulter diagnostics",
+        "role": "Vice President Commercial Operation, High Growth Markets",
+        "country": "SG",
+        "location": "Singapore",
+        "status": "Applied",
+        "priority_score": 53.25,
+        "executive_score": 71.37,
+        "jobhunter_score": 53.25,
+        "application_date": "2026-08-06",
+        "last_updated": "2026-08-06 22:29",
+        "interview_date": "",
+        "follow_up_date": "",
+        "offer_date": "",
+        "recruiter": "",
+        "notes": "",
+        "history": [
+            {
+                "date": "2026-08-06 22:29",
+                "status": "Applied"
+            }
+        ]
+    },
+    {
+        "application_id": "981b7dfd-9346-487e-b9d2-672d09a36944",
+        "company": "ThermoFisher Scientific",
+        "role": "EU Business Development Director - Commercial Leadership | GMP Labs",
+        "country": "DE",
+        "location": "Deutschland",
+        "status": "Applied",
+        "priority_score": 53.25,
+        "executive_score": 71.37,
+        "jobhunter_score": 53.25,
+        "application_date": "2026-08-06",
+        "last_updated": "2026-08-06 22:47",
+        "interview_date": "",
+        "follow_up_date": "",
+        "offer_date": "",
+        "recruiter": "",
+        "notes": "",
+        "history": [
+            {
+                "date": "2026-08-06 22:47",
+                "status": "Applied"
+            }
+        ]
     }
 ]

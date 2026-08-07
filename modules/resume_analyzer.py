@@ -4,33 +4,82 @@ import re
 class ResumeAnalyzer:
 
     def __init__(self, resume_text):
-        self.text = resume_text
-        self.lower_text = resume_text.lower()
+
+        self.text = str(resume_text)
+
+        self.lower_text = self.text.lower()
+
+    # --------------------------------------------------
 
     def extract_name(self):
-        first_line = self.text.splitlines()[0].strip()
-        return first_line
+
+        for line in self.text.splitlines():
+
+            line = line.strip()
+
+            if len(line) > 3:
+
+                return line
+
+        return "Unknown"
+
+    # --------------------------------------------------
 
     def extract_experience(self):
-        match = re.search(r'(\d+)\+?\s*years', self.lower_text)
 
-        if match:
-            return match.group(1) + "+ Years"
+        patterns = [
+
+            r"(\d+)\+?\s*years",
+
+            r"(\d+)\s*yrs",
+
+            r"experience\s*[:\-]?\s*(\d+)"
+
+        ]
+
+        for pattern in patterns:
+
+            match = re.search(
+
+                pattern,
+
+                self.lower_text
+
+            )
+
+            if match:
+
+                return f"{match.group(1)}+ Years"
 
         return "Not Found"
 
-    def find_matches(self, items):
+    # --------------------------------------------------
+
+    def find_matches(
+        self,
+        items
+    ):
+
         return sorted(
+
             {
+
                 item
+
                 for item in items
+
                 if item.lower() in self.lower_text
+
             }
+
         )
+
+    # --------------------------------------------------
 
     def analyze(self):
 
         skills = [
+
             "Business Development",
             "Strategic Sales",
             "Enterprise Sales",
@@ -42,24 +91,40 @@ class ResumeAnalyzer:
             "Operations",
             "Shared Services",
             "SaaS",
-            "Automation"
+            "Automation",
+            "IoT",
+            "Digital Transformation",
+            "Key Account Management"
+
         ]
 
         industries = [
+
             "Telecom",
             "Technology",
             "Engineering",
             "Renewable Energy",
             "Manufacturing",
-            "Industrial Automation"
+            "Industrial Automation",
+            "Electronics",
+            "Software"
+
         ]
 
         leadership = "Executive"
 
         return {
+
             "name": self.extract_name(),
+
             "experience": self.extract_experience(),
+
             "skills": self.find_matches(skills),
+
             "industries": self.find_matches(industries),
-            "leadership": leadership
+
+            "leadership": leadership,
+
+            "word_count": len(self.text.split())
+
         }

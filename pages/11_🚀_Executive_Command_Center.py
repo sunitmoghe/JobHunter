@@ -68,9 +68,18 @@ try:
 except Exception:
 
     applications = []
-live_jobs = agent.search_all_roles(max_roles=3)
+try:
+    live_jobs = st.session_state.get(
+    "executive_jobs",
+    []
+)
+except Exception:
+    live_jobs = []
 
-statistics = JobStatistics(live_jobs)
+try:
+    statistics = JobStatistics(live_jobs)
+except Exception:
+    statistics = None
 
 dashboard_data = dashboard.get_dashboard()
 
@@ -337,7 +346,10 @@ section_header(
 )
 
 
-best_country = strategy["best_markets"][0]["country"]
+best_country = "Global"
+
+if strategy.get("best_markets"):
+    best_country = strategy["best_markets"][0]["country"]
 
 summary = f"""
 Your Executive Readiness Score is
@@ -384,21 +396,21 @@ with stats_col1:
 
     st.metric(
         "Companies",
-        statistics.companies()
+        statistics.companies() if statistics else 0
     )
 
 with stats_col2:
 
     st.metric(
         "Countries",
-        statistics.countries()
+        statistics.countries() if statistics else 0
     )
 
 with stats_col3:
 
     st.metric(
         "Average Executive Score",
-        statistics.average_score()
+        statistics.average_score() if statistics else 0
     )
 
 divider()

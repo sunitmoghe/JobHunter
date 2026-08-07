@@ -1,5 +1,7 @@
 import streamlit as st
 
+from modules.opportunity_score_engine import OpportunityScoreEngine
+
 
 class JobCardRenderer:
 
@@ -28,6 +30,8 @@ class JobCardRenderer:
         self.application_tracker = application_tracker
         self.saved_jobs_manager = saved_jobs_manager
 
+        self.opportunity_engine = OpportunityScoreEngine()
+
     def render(
         self,
         job,
@@ -39,21 +43,31 @@ class JobCardRenderer:
             "role",
             job.get(
                 "title",
-                "Executive Role"
-            )
+                "Executive Role",
+            ),
         )
 
         company = job.get(
             "company",
-            "Unknown Company"
+            "Unknown Company",
         )
 
         location = job.get(
             "location",
             job.get(
                 "country",
-                "Unknown"
-            )
+                "Unknown",
+            ),
+        )
+
+        executive_score = job.get(
+            "executive_score",
+            0,
+        )
+
+        jobhunter_score = job.get(
+            "jobhunter_score",
+            executive_score,
         )
 
         st.subheader(role)
@@ -62,6 +76,48 @@ class JobCardRenderer:
             f"{company} • {location}"
         )
 
+        score1, score2, score3, score4 = st.columns(4)
+
+        opportunity = self.opportunity_engine.calculate(job)
+
+        st.success(
+            f"🏆 Executive Opportunity Score : {opportunity['score']}/100"
+        )
+
+        st.info(
+            opportunity["rating"]
+        )
+
+        st.divider()
+
+        with score1:
+
+            st.metric(
+                "🏆 JobHunter Score",
+                jobhunter_score,
+            )
+
+        with score2:
+
+            st.metric(
+                "⭐ Executive Score",
+                executive_score,
+            )
+
+        with score3:
+
+            st.metric(
+                "💰 Salary",
+                "Yes" if job.get("salary") else "-",
+            )
+
+        with score4:
+
+            st.metric(
+                "🌍 Visa",
+                "Yes" if job.get("visa_sponsorship") else "No",
+            )
+
         st.divider()
 
         company_col1, company_col2 = st.columns(2)
@@ -69,402 +125,218 @@ class JobCardRenderer:
         with company_col1:
 
             st.write(
-                f"⭐ Company Rating : {job.get('company_rating', 3)}/5"
+                f"⭐ Company Rating : {job.get('company_rating', 'N/A')}/5"
             )
-
-            if job.get("fortune500"):
-
-                st.success(
-                    "🏢 Fortune 500 Company"
-                )
-
-            else:
-
-                st.info(
-                    "🏢 Standard Company"
-                )
-
-            if job.get("verified_company"):
-
-                st.success(
-                    "✅ Verified Employer"
-                )
-
-        with company_col2:
-
-            if job.get("visa_sponsorship"):
-
-                st.success(
-                    "🌍 Visa Sponsorship"
-                )
-
-            else:
-
-                st.warning(
-                    "No Visa Sponsorship"
-                )
-
-            if job.get("remote_friendly"):
-
-                st.success(
-                    "🏠 Remote Friendly"
-                )
 
             st.write(
                 f"📈 Hiring Trend : {job.get('hiring_trend', 'Unknown')}"
             )
 
-        with st.expander(
-            "🌐 Live Company Intelligence",
-            expanded=False
-        ):
+            if job.get("fortune500"):
+                st.success("🏢 Fortune 500 Company")
 
-            st.write(
-                "🌍 Website"
-            )
+            if job.get("verified_company"):
+                st.success("✅ Verified Employer")
 
-            st.code(
-                job.get(
-                    "company_website",
-                    "Not Available"
-                )
-            )
+        with company_col2:
+            with st.expander(
+                "🌐 Executive Company Intelligence",
+                expanded=False,
+            ):
 
-            st.write(
-                "💼 Careers"
-            )
+                st.write(f"🏭 Industry : {job.get('industry','Unknown')}")
+                st.write(f"👥 Employees : {job.get('employee_count','Unknown')}")
+                st.write(f"🌍 Headquarters : {job.get('headquarters','Unknown')}")
+                st.write(f"💰 Revenue : {job.get('estimated_revenue','Unknown')}")
+                st.write(f"📈 Growth Score : {job.get('growth_score',0)}/100")
+                st.write(f"🚨 Layoff Risk : {job.get('layoff_risk','Unknown')}")
 
-            st.code(
-                job.get(
-                    "careers_page",
-                    "Not Available"
-                )
-            )
+            with st.expander(
+                "💰 Salary Intelligence",
+                expanded=False,
+            ):
 
-            st.write(
-                "📞 Contact"
-            )
-
-            st.code(
-                job.get(
-                    "contact_page",
-                    "Not Available"
-                )
-            )
-
-            st.write(
-                "👥 LinkedIn"
-            )
-
-            st.code(
-                job.get(
-                    "linkedin_company",
-                    "Not Available"
-                )
-            )
-
-        st.divider()
-
-            # ------------------------------------------
-        # Salary Intelligence
-        # ------------------------------------------
-
-        with st.expander(
-            "💰 Salary Intelligence",
-            expanded=False,
-        ):
-
-            country = job.get(
-                "country",
-                "Unknown"
-            )
-
-            role = job.get(
-                "role",
-                job.get(
-                    "title",
-                    "Executive Role"
-                )
-            )
-
-            salary = self.salary_engine.get_salary_benchmark(
-                country,
-                role
-            )
-
-            if "average" in salary:
-
-                st.write(
-                    f"💵 Salary Range : {salary['currency']} {salary['low']:,} - {salary['high']:,}"
+                salary = self.salary_engine.get_salary_benchmark(
+                    job.get("country", "Unknown"),
+                    role,
                 )
 
-                st.write(
-                    f"📊 Market Average : {salary['currency']} {salary['average']:,}"
-                )
+                if isinstance(salary, dict) and "average" in salary:
 
-            else:
-
-                st.info(
-                    salary.get(
-                        "message",
-                        "Salary benchmark unavailable."
-                    )
-                )
-        # ------------------------------------------
-        # Recruiter Intelligence
-        # ------------------------------------------
-
-        with st.expander(
-            "👥 Recruiter Intelligence",
-            expanded=False,
-        ):
-
-            recruiter = self.recruiter_engine.find_recruiter(
-                job
-            )
-
-            if recruiter:
-
-                st.write(
-                    "**Recruiter:**",
-                    recruiter.get(
-                        "name",
-                        "Not Available",
-                    ),
-                )
-
-                st.write(
-                    "**Title:**",
-                    recruiter.get(
-                        "title",
-                        "Not Available",
-                    ),
-                )
-
-                st.write(
-                    "**Recruiter Email:**",
-                    recruiter.get(
-                        "email",
-                        "Not Available",
-                    ),
-                )
-
-                st.write(
-                    "**HR Email:**",
-                    recruiter.get(
-                        "hr_email",
-                        "Not Available",
-                    ),
-                )
-
-                st.write(
-                    "**Confidence:**",
-                    recruiter.get(
-                        "confidence",
-                        "Low",
-                    ),
-                )
-
-            else:
-
-                st.info(
-                    "Recruiter information not available."
-                )
-
-        # ------------------------------------------
-        # AI Skill Analysis
-        # ------------------------------------------
-
-        with st.expander(
-            "🎯 AI Skill Analysis",
-            expanded=False,
-        ):
-
-            try:
-
-                skill_result = self.skill_matcher.match(
-                    profile,
-                    job,
-                )
-
-                st.metric(
-                    "ATS Match",
-                    f"{skill_result.get('score',0)}%",
-                )
-
-                matched = skill_result.get(
-                    "matched_skills",
-                    [],
-                )
-
-                missing = skill_result.get(
-                    "missing_skills",
-                    [],
-                )
-
-                if matched:
-
-                    st.success(
-                        "Matched Skills"
+                    st.write(
+                        f"Average : {salary['currency']} {salary['average']:,}"
                     )
 
                     st.write(
-                        ", ".join(matched)
+                        f"Range : {salary['currency']} {salary['low']:,} - {salary['high']:,}"
                     )
 
-                if missing:
+                else:
 
-                    st.warning(
-                        "Missing Skills"
+                    st.info("Salary benchmark unavailable.")
+
+            with st.expander(
+                "👥 Recruiter Intelligence",
+                expanded=False,
+            ):
+
+                recruiter = self.recruiter_engine.find_recruiter(job)
+
+                if recruiter:
+                    st.write(recruiter)
+                else:
+                    st.info("Recruiter information unavailable.")
+
+            with st.expander(
+                "🎯 AI Skill Analysis",
+                expanded=False,
+            ):
+
+                try:
+
+                    skill_result = self.skill_matcher.match(
+                        profile,
+                        job,
                     )
-
-                    st.write(
-                        ", ".join(missing)
-                    )
-
-            except Exception as e:
-
-                st.warning(str(e))
-
-        # ------------------------------------------
-        # Executive Score
-        # ------------------------------------------
-
-        with st.expander(
-            "📊 Executive Score Breakdown",
-            expanded=False,
-        ):
-
-            try:
-
-                score = self.scoring_engine.score_job(
-                    job,
-                    profile,
-                )
-
-                if isinstance(score, dict):
 
                     st.metric(
-                        "Executive Score",
-                        score.get(
-                            "score",
-                            0,
-                        ),
+                        "ATS Match",
+                        f"{skill_result.get('score',0)}%",
                     )
 
-                    if score.get(
-                        "reason",
-                    ):
+                    matched = skill_result.get(
+                        "matched_skills",
+                        [],
+                    )
 
-                        st.write(
-                            score["reason"]
+                    missing = skill_result.get(
+                        "missing_skills",
+                        [],
+                    )
+
+                    if matched:
+                        st.success("Matched Skills")
+                        st.write(", ".join(matched))
+
+                    if missing:
+                        st.warning("Missing Skills")
+                        st.write(", ".join(missing))
+
+                except Exception as e:
+                    st.warning(str(e))
+
+            with st.expander(
+                "📊 Executive Score Breakdown",
+                expanded=False,
+            ):
+
+                try:
+
+                    score = self.scoring_engine.score_job(
+                        job,
+                        profile,
+                    )
+
+                    if isinstance(score, dict):
+
+                        st.metric(
+                            "Executive Score",
+                            score.get("score", 0),
                         )
 
-                else:
+                        reason = score.get("reason")
 
-                    st.metric(
-                        "Executive Score",
-                        score,
+                        if reason:
+                            st.write(reason)
+
+                    else:
+
+                        st.metric(
+                            "Executive Score",
+                            score,
+                        )
+
+                except Exception as e:
+
+                    st.warning(str(e))
+
+            st.divider()
+
+            with st.expander(
+                "📄 AI Resume Tailoring",
+                expanded=False,
+            ):
+
+                try:
+
+                    tailored_resume = self.resume_tailor.tailor_resume(
+                        profile,
+                        job,
                     )
 
-            except Exception as e:
+                    if tailored_resume:
 
-                st.warning(str(e))
-
-        st.divider()
-
-        # ------------------------------------------
-        # AI Resume Tailoring
-        # ------------------------------------------
-
-        with st.expander(
-            "📄 AI Resume Tailoring",
-            expanded=False,
-        ):
-
-            try:
-
-                tailored_resume = self.resume_tailor.tailor_resume(
-                    profile,
-                    job,
-                )
-
-                if tailored_resume:
-
-                    st.success(
-                        "Resume successfully tailored."
-                    )
-
-                    st.text_area(
-                        "Tailored Resume Preview",
-                        tailored_resume,
-                        height=250,
-                    )
-
-                else:
-
-                    st.info(
-                        "Resume tailoring not available."
-                    )
-
-            except Exception as e:
-
-                st.warning(str(e))
-
-        # ------------------------------------------
-        # AI Application Assistant
-        # ------------------------------------------
-
-        with st.expander(
-            "🤖 AI Application Assistant",
-            expanded=False,
-        ):
-
-            try:
-
-                assistant = self.application_assistant.generate(
-                    profile,
-                    job,
-                )
-
-                if isinstance(
-                    assistant,
-                    dict,
-                ):
-
-                    if assistant.get("linkedin_message"):
+                        st.success("Resume successfully tailored.")
 
                         st.text_area(
-                            "LinkedIn Message",
-                            assistant["linkedin_message"],
-                            height=120,
+                            "Tailored Resume Preview",
+                            tailored_resume,
+                            height=220,
                         )
 
-                    if assistant.get("cover_letter"):
+                    else:
 
-                        st.text_area(
-                            "Cover Letter",
-                            assistant["cover_letter"],
-                            height=250,
-                        )
+                        st.info("Resume tailoring unavailable.")
 
-                else:
+                except Exception as e:
 
-                    st.write(assistant)
+                    st.warning(str(e))
 
-            except Exception as e:
+            with st.expander(
+                "🤖 AI Application Assistant",
+                expanded=False,
+            ):
 
-                st.warning(str(e))
+                try:
 
-        st.divider()
+                    assistant = self.application_assistant.generate(
+                        profile,
+                        job,
+                    )
 
-        # ------------------------------------------
-        # Job Actions
-        # ------------------------------------------
+                    if isinstance(assistant, dict):
 
-        action_col1, action_col2 = st.columns(2)
+                        if assistant.get("linkedin_message"):
 
-        with action_col1:
+                            st.text_area(
+                                "LinkedIn Message",
+                                assistant["linkedin_message"],
+                                height=120,
+                            )
+
+                        if assistant.get("cover_letter"):
+
+                            st.text_area(
+                                "Cover Letter",
+                                assistant["cover_letter"],
+                                height=250,
+                            )
+
+                    else:
+
+                        st.write(assistant)
+
+                except Exception as e:
+
+                    st.warning(str(e))
+
+            st.divider()
+
+        st.subheader("🚀 Executive Actions")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
 
             if st.button(
                 "💾 Save Job",
@@ -475,121 +347,154 @@ class JobCardRenderer:
 
                     self.saved_jobs_manager.save_job(job)
 
-                    st.success(
-                        "Job saved successfully."
-                    )
+                    st.success("✅ Job Saved")
 
                 except Exception as e:
 
-                    st.warning(str(e))
+                    st.error(str(e))
 
-        with action_col2:
+        with col2:
 
             if st.button(
-                "📌 Mark Applied",
+                "🚀 One Click Apply",
                 key=f"apply_{index}",
             ):
 
                 try:
 
-                    self.application_tracker.mark_applied(
-                        job
+                    self.saved_jobs_manager.save_job(job)
+
+                    self.application_tracker.mark_applied(job)
+
+                    resume = self.resume_tailor.tailor_resume(
+                        profile,
+                        job,
                     )
 
-                    st.success(
-                        "Application recorded."
+                    package = self.application_assistant.generate_apply_package(
+                        profile,
+                        job,
                     )
+
+                    st.session_state[f"resume_{index}"] = resume
+
+                    st.session_state[f"package_{index}"] = package or {}
+
+                    st.success("✅ Job Saved")
+                    st.success("✅ Application Recorded")
+                    st.success("✅ ATS Resume Generated")
 
                 except Exception as e:
 
-                    st.warning(str(e))
+                    st.error(str(e))
 
-        st.divider()
+        if f"resume_{index}" in st.session_state:
 
-        # ------------------------------------------
-        # Interview Questions
-        # ------------------------------------------
+            st.download_button(
+                "📄 Download ATS Resume",
+                st.session_state[f"resume_{index}"],
+                file_name=f"{role}_ATS_Resume.txt",
+                mime="text/plain",
+                key=f"resume_download_{index}",
+            )
 
-        with st.expander(
-            "🎤 AI Interview Questions",
-            expanded=False,
-        ):
+        package = st.session_state.get(
+            f"package_{index}",
+            {},
+        )
 
-            try:
+        downloads = [
 
-                questions = job.get(
-                    "interview_questions",
-                    [],
+            (
+                "📄 Download Cover Letter",
+                "cover_letter",
+                "Cover_Letter",
+            ),
+
+            (
+                "💼 Download LinkedIn Message",
+                "linkedin_message",
+                "LinkedIn_Message",
+            ),
+
+            (
+                "📧 Download Recruiter Email",
+                "recruiter_email",
+                "Recruiter_Email",
+            ),
+
+            (
+                "📨 Download HR Email",
+                "hr_email",
+                "HR_Email",
+            ),
+
+            (
+                "👔 Download Hiring Manager Email",
+                "hiring_manager_email",
+                "Hiring_Manager_Email",
+            ),
+
+            (
+                "🎤 Download Executive Pitch",
+                "executive_pitch",
+                "Executive_Pitch",
+            ),
+
+        ]
+
+        for label, field, filename in downloads:
+
+            value = package.get(field)
+
+            if value:
+
+                st.download_button(
+
+                    label,
+
+                    value,
+
+                    file_name=f"{role}_{filename}.txt",
+
+                    mime="text/plain",
+
+                    key=f"{field}_{index}",
+
                 )
 
-                if questions:
+        apply_link = job.get("apply_link") or job.get("url")
 
-                    for question in questions:
+        if apply_link:
 
-                        st.write(
-                            "•",
-                            question,
-                        )
+            st.link_button(
 
-                else:
+                "🌍 Apply on Company Website",
 
-                    st.info(
-                        "No interview questions available."
-                    )
+                apply_link,
 
-            except Exception as e:
+            )
 
-                st.warning(str(e))
+        else:
 
-        # ------------------------------------------
-        # Executive Summary
-        # ------------------------------------------
+            st.info("Company website unavailable.")
 
         with st.expander(
+
             "📋 Executive Summary",
+
             expanded=False,
+
         ):
 
-            st.write(
-                "**Role:**",
-                role,
-            )
-
-            st.write(
-                "**Company:**",
-                company,
-            )
-
-            st.write(
-                "**Location:**",
-                location,
-            )
-
-            st.write(
-                "**Priority Score:**",
-                job.get(
-                    "priority_score",
-                    "Not Available",
-                ),
-            )
-
-            st.write(
-                "**Executive Score:**",
-                job.get(
-                    "executive_score",
-                    "Not Available",
-                ),
-            )
-
+            st.write("**Role:**", role)
+            st.write("**Company:**", company)
+            st.write("**Location:**", location)
+            st.write("**Executive Score:**", executive_score)
+            st.write("**JobHunter Score:**", jobhunter_score)
             st.write(
                 "**Visa Sponsorship:**",
-                "Yes"
-                if job.get("visa_sponsorship")
-                else "No",
+                "Yes" if job.get("visa_sponsorship") else "No",
             )
 
-        st.divider()
-
-        st.markdown(
-            "---"
-        )
+        st.markdown("---")

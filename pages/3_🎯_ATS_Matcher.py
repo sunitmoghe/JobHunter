@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 
 from modules.resume_parser import ResumeParser
@@ -27,8 +28,8 @@ page_header(
 )
 
 uploaded_resume = st.file_uploader(
-    "Upload Resume PDF",
-    type=["pdf"],
+    "Upload Resume (PDF or DOCX)",
+    type=["pdf", "docx"],
 )
 
 job_description = st.text_area(
@@ -38,8 +39,14 @@ job_description = st.text_area(
 
 if uploaded_resume and job_description:
 
+    extension = os.path.splitext(
+        uploaded_resume.name
+    )[1].lower()
+
+    temp_resume = f"temp_ats_resume{extension}"
+
     with open(
-        "temp_ats_resume.pdf",
+        temp_resume,
         "wb"
     ) as f:
 
@@ -48,7 +55,7 @@ if uploaded_resume and job_description:
         )
 
     parser = ResumeParser(
-        "temp_ats_resume.pdf"
+        temp_resume
     )
 
     resume_text = parser.read_resume()
@@ -102,7 +109,7 @@ if uploaded_resume and job_description:
             "✅ Matched Skills"
         )
 
-        if result["matched"]:
+        if result.get("matched"):
 
             for item in result["matched"]:
 
@@ -122,7 +129,7 @@ if uploaded_resume and job_description:
             "⚠ Missing Keywords"
         )
 
-        if result["missing"]:
+        if result.get("missing"):
 
             for item in result["missing"]:
 
@@ -149,10 +156,10 @@ if uploaded_resume and job_description:
 
     if recommendations:
 
-        for item in recommendations:
+        for recommendation in recommendations:
 
             warning_box(
-                item
+                recommendation
             )
 
     else:
@@ -174,5 +181,5 @@ if uploaded_resume and job_description:
 else:
 
     info_box(
-        "Please upload your resume and paste a job description to begin ATS analysis."
+        "Please upload a PDF or DOCX resume and paste a job description to begin ATS analysis."
     )
