@@ -1,39 +1,20 @@
 import streamlit as st
 
-from modules.interview_coach_ai import InterviewCoachAI
+from modules.executive_ai_agent import ExecutiveAIAgent
 from modules.profile_manager import ProfileManager
-
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
+from modules.interview_coach_engine import InterviewCoachEngine
 
 st.set_page_config(
-    page_title="AI Interview Coach",
+    page_title="Interview Coach",
     page_icon="🎤",
-    layout="wide"
+    layout="wide",
 )
 
-
-# --------------------------------------------------
-# TITLE
-# --------------------------------------------------
-
-st.title(
-    "🎤 AI Executive Interview Coach"
-)
-
-st.write(
-    "Prepare executive-level interview answers using AI."
-)
-
-
-
-coach = InterviewCoachAI()
+st.title("🎤 Executive Interview Coach")
 
 profile_manager = ProfileManager()
-
-
+agent = ExecutiveAIAgent()
+coach = InterviewCoachEngine()
 
 if profile_manager.profile_exists():
 
@@ -41,158 +22,40 @@ if profile_manager.profile_exists():
 
 else:
 
-    profile = {}
+    profile = {
+        "experience": 23,
+    }
 
-    st.warning(
-        "⚠ No executive profile found. Analyse your resume first."
-    )
+jobs = agent.search_all_roles(max_roles=20)
 
+if not jobs:
 
+    st.warning("No executive jobs found.")
 
-# --------------------------------------------------
-# JOB INPUT
-# --------------------------------------------------
+    st.stop()
 
-st.subheader(
-    "💼 Interview Preparation Setup"
+job_names = [
+    f"{j.get('role','Executive')} • {j.get('company','Company')}"
+    for j in jobs
+]
+
+selected = st.selectbox(
+    "Select Executive Opportunity",
+    range(len(job_names)),
+    format_func=lambda x: job_names[x],
 )
 
+job = jobs[selected]
 
-role = st.text_input(
-    "Target Role",
-    "Vice President Sales"
+questions = coach.generate_questions(
+    profile,
+    job,
 )
 
+st.subheader("Executive Interview Questions")
 
-company = st.text_input(
-    "Company",
-    "Target Company"
-)
+for i, q in enumerate(questions, start=1):
 
+    st.write(f"**Q{i}.** {q}")
 
-industry = st.text_input(
-    "Industry",
-    "Technology"
-)
-
-
-
-job = {
-
-    "role": role,
-
-    "company": company,
-
-    "industry": industry
-
-}
-
-
-
-# --------------------------------------------------
-# QUESTION GENERATOR
-# --------------------------------------------------
-
-if st.button(
-    "🎯 Generate Interview Questions"
-):
-
-    questions = coach.generate_questions(
-        job
-    )
-
-
-    st.session_state["questions"] = questions
-
-
-
-if "questions" in st.session_state:
-
-
-    st.subheader(
-        "🔥 Executive Interview Questions"
-    )
-
-
-    for index, question in enumerate(
-        st.session_state["questions"]
-    ):
-
-        with st.expander(
-            f"Question {index+1}"
-        ):
-
-            st.write(
-                question
-            )
-
-
-            if st.button(
-                "Generate STAR Answer",
-                key=f"star_{index}"
-            ):
-
-                answer = coach.generate_star_answer(
-                    question,
-                    profile
-                )
-
-
-                st.info(
-                    answer
-                )
-
-
-
-# --------------------------------------------------
-# ANSWER EVALUATOR
-# --------------------------------------------------
-
-st.divider()
-
-
-st.subheader(
-    "🤖 Evaluate Your Answer"
-)
-
-
-user_answer = st.text_area(
-    "Paste your interview answer",
-    height=200
-)
-
-
-
-if st.button(
-    "📊 Evaluate Answer"
-):
-
-    if user_answer:
-
-
-        evaluation = coach.evaluate_answer(
-            user_answer
-        )
-
-
-        st.metric(
-            "Executive Interview Score",
-            f"{evaluation['score']}%"
-        )
-
-
-        st.success(
-            evaluation["strength"]
-        )
-
-
-        st.warning(
-            evaluation["improvement"]
-        )
-
-
-    else:
-
-        st.info(
-            "Please enter an answer first."
-        )
+st.success("Interview Coach Ready")

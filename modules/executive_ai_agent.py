@@ -63,63 +63,75 @@ class ExecutiveAIAgent:
 
         return jobs
 
-    def search_all_roles(
-        self,
-        max_roles=None,
-        selected_countries=None
-    ):
+def search_all_roles(
+    self,
+    max_roles=None,
+    selected_countries=None,
+):
 
-        if max_roles is None:
+    cache_key = "ALL_EXECUTIVE_JOBS"
 
-            roles = EXECUTIVE_ROLES
+    cached = self.cache.get_jobs(cache_key)
 
-        else:
+    if cached:
 
-            roles = EXECUTIVE_ROLES[:max_roles]
+        print("✓ Using Executive Master Cache")
 
-        jobs = self.parallel_engine.search_roles(
-            roles,
-            selected_countries
+        return cached
+
+    if max_roles is None:
+
+        roles = EXECUTIVE_ROLES
+
+    else:
+
+        roles = EXECUTIVE_ROLES[:max_roles]
+
+    jobs = self.parallel_engine.search_roles(
+        roles,
+        selected_countries,
+    )
+
+    executive_jobs = []
+
+    for job in jobs:
+
+        score_data = self.scoring.calculate_score(job)
+
+        executive_score = score_data.get(
+            "executive_fit",
+            0,
         )
 
-        executive_jobs = []
+        job["executive_score"] = executive_score
 
-        for job in jobs:
+        job["score_details"] = score_data
 
-            score_data = self.scoring.calculate_score(job)
-
-            executive_score = score_data.get(
-                "executive_fit",
-                0
-            )
-
-            job["executive_score"] = executive_score
-
-            job["score_details"] = score_data
-
-            job["priority"] = self.get_priority(
-                executive_score
-            )
-
-            job["recommendation"] = self.get_recommendation(
-                executive_score
-            )
-
-            executive_jobs.append(job)
-
-        executive_jobs.sort(
-
-            key=lambda x: x.get(
-                "executive_score",
-                0
-            ),
-
-            reverse=True
-
+        job["priority"] = self.get_priority(
+            executive_score,
         )
 
-        return executive_jobs
+        job["recommendation"] = self.get_recommendation(
+            executive_score,
+        )
 
+        executive_jobs.append(job)
+
+    executive_jobs.sort(
+        key=lambda x: x.get(
+            "executive_score",
+            0,
+        ),
+        reverse=True,
+    )
+
+    self.cache.save_jobs(
+        cache_key,
+        executive_jobs,
+    )
+
+    return executive_jobs
+    
     def clear_cache(self):
 
         self.cache.clear_cache()
