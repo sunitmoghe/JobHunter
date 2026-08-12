@@ -1,92 +1,160 @@
-from modules.skill_intelligence import SkillIntelligence
+from modules.job_skill_matcher import JobSkillMatcher
 
 
 class JobMatcherEngine:
 
     def __init__(self):
 
-        self.skill_engine = SkillIntelligence()
+        self.skill_matcher = JobSkillMatcher()
 
-    # --------------------------------------------------
-
-    def calculate_match(
+    def match_job(
         self,
         profile,
-        job
+        job,
     ):
 
-        if not profile:
+        result = self.skill_matcher.match(
+            profile,
+            job,
+        )
 
-            raise Exception(
-                "No executive profile found."
+        score = result.get(
+            "match_score",
+            0,
+        )
+
+        if score >= 80:
+
+            recommendation = "Excellent Match"
+
+        elif score >= 65:
+
+            recommendation = "Strong Match"
+
+        elif score >= 50:
+
+            recommendation = "Potential Match"
+
+        elif score >= 30:
+
+            recommendation = "Weak Match"
+
+        else:
+
+            recommendation = "Low Match"
+
+        result["recommendation"] = recommendation
+
+        result["job_title"] = job.get(
+            "title",
+            job.get(
+                "role",
+                job.get(
+                    "job_title",
+                    "",
+                ),
+            ),
+        )
+
+        result["company"] = job.get(
+            "company",
+            "",
+        )
+
+        result["location"] = job.get(
+            "location",
+            "",
+        )
+
+        return result
+
+    def match(
+        self,
+        profile,
+        job,
+    ):
+
+        return self.match_job(
+            profile,
+            job,
+        )
+
+    def score(
+        self,
+        profile,
+        job,
+    ):
+
+        result = self.match_job(
+            profile,
+            job,
+        )
+
+        return result.get(
+            "match_score",
+            0,
+        )
+
+    def rank_jobs(
+        self,
+        profile,
+        jobs,
+    ):
+
+        results = []
+
+        if not isinstance(
+            jobs,
+            list,
+        ):
+
+            return results
+
+        for job in jobs:
+
+            if not isinstance(
+                job,
+                dict,
+            ):
+
+                continue
+
+            result = self.match_job(
+                profile,
+                job,
             )
 
-        profile_skills = self.skill_engine.normalize_skills(
+            result["job"] = job
 
-            profile.get(
-                "skills",
-                []
+            results.append(
+                result
             )
 
+        results.sort(
+            key=lambda item: float(
+                item.get(
+                    "match_score",
+                    0,
+                )
+                or 0
+            ),
+            reverse=True,
         )
 
-        raw_job_skills = job.get(
-            "skills",
-            []
+        return results
+
+    def top_matches(
+        self,
+        profile,
+        jobs,
+        limit=10,
+    ):
+
+        results = self.rank_jobs(
+            profile,
+            jobs,
         )
 
-        if isinstance(raw_job_skills, str):
-
-            raw_job_skills = [
-
-                skill.strip()
-
-                for skill in raw_job_skills.split(",")
-
-                if skill.strip()
-
-            ]
-
-        job_skills = self.skill_engine.normalize_skills(
-            raw_job_skills
-        )
-
-        matched = profile_skills.intersection(
-            job_skills
-        )
-
-        missing = job_skills.difference(
-            profile_skills
-        )
-
-        score = 0
-
-        if job_skills:
-
-            score = round(
-
-                (
-
-                    len(matched)
-                    /
-                    len(job_skills)
-
-                ) * 100,
-
-                1
-
-            )
-
-        return {
-
-            "score": score,
-
-            "matched": sorted(list(matched)),
-
-            "missing": sorted(list(missing)),
-
-            "matched_count": len(matched),
-
-            "missing_count": len(missing)
-
-        }
+        return results[
+            :limit
+        ]

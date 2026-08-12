@@ -1,5 +1,8 @@
 class ResumeTailorEngine:
 
+    def __init__(self):
+        pass
+
     # --------------------------------------------------
 
     def tailor_resume(
@@ -18,7 +21,10 @@ class ResumeTailorEngine:
             job,
         )
 
-        keywords = fit["matched_skills"] + fit["missing_skills"]
+        keywords = (
+            fit["matched_skills"]
+            + fit["missing_skills"]
+        )
 
         tailored_resume = f"""
 EXECUTIVE SUMMARY
@@ -38,11 +44,13 @@ KEY ACHIEVEMENTS
 • Improved customer success
 • Developed strategic partnerships
 
-ATS MATCH SCORE : {fit['match_score']}%
+ATS MATCH SCORE : {fit["match_score"]}%
 
 RECOMMENDATIONS
 
-{self._format_recommendations(fit['recommendations'])}
+{self._format_recommendations(
+    fit["recommendations"]
+)}
 """
 
         return tailored_resume
@@ -52,41 +60,42 @@ RECOMMENDATIONS
     def analyze_job_fit(
         self,
         profile,
-        job
+        job,
     ):
 
         profile_skills = [
-
-            str(skill).lower()
-
+            str(skill).strip().lower()
             for skill in profile.get(
                 "skills",
-                []
+                [],
             )
-
+            if str(skill).strip()
         ]
 
-        text = (
-
+        job_description = str(
             job.get(
                 "description",
-                ""
+                "",
             )
+        )
 
-            + " "
-
-            + job.get(
+        job_role = str(
+            job.get(
                 "role",
                 job.get(
                     "title",
-                    ""
-                )
+                    "",
+                ),
             )
+        )
 
+        text = (
+            job_description
+            + " "
+            + job_role
         ).lower()
 
         matched = []
-
         missing = []
 
         for skill in profile_skills:
@@ -99,86 +108,74 @@ RECOMMENDATIONS
 
                 missing.append(skill)
 
-                total = len(profile_skills)
+        total = len(
+            profile_skills
+        )
 
-        score = round(
+        if total:
 
-            (
+            score = round(
+                (
+                    len(matched)
+                    / total
+                ) * 100,
+                2,
+            )
 
-                len(matched)
+        else:
 
-                /
-
-                total
-
-            ) * 100,
-
-            2,
-
-        ) if total else 0
+            score = 0
 
         recommendations = []
 
         if missing:
 
             recommendations.append(
-
                 "Include these keywords where they genuinely match your experience: "
-
-                + ", ".join(missing[:15])
-
+                + ", ".join(
+                    missing[:15]
+                )
             )
 
         recommendations.append(
-
             "Quantify achievements using revenue, profit, growth %, customer acquisition, project values and team size."
-
         )
 
         recommendations.append(
-
             "Mirror the wording used in the Job Description."
-
         )
 
         recommendations.append(
-
             "Rewrite your Executive Summary specifically for this role."
-
         )
 
         recommendations.append(
-
             "Prioritize measurable leadership achievements."
-
         )
 
         recommendations.append(
-
             "Place the strongest matching keywords in the first page."
-
         )
 
         return {
 
             "match_score": score,
 
-            "matched_skills": sorted(matched),
+            "matched_skills": sorted(
+                matched
+            ),
 
-            "missing_skills": sorted(missing),
+            "missing_skills": sorted(
+                missing
+            ),
 
             "recommended_keywords": sorted(
-
                 list(
-
                     set(
-
-                        matched + missing
-
+                        matched
+                        + missing
                     )
-
                 )
-
             ),
 
             "recommendations": recommendations,
@@ -188,57 +185,38 @@ RECOMMENDATIONS
     # --------------------------------------------------
 
     def generate_executive_summary(
-
         self,
-
         profile,
-
         job,
-
     ):
 
         role = job.get(
-
             "role",
-
             job.get(
-
                 "title",
-
                 "Executive Role",
-
             ),
-
         )
 
         experience = profile.get(
-
             "experience",
-
             "20+",
-
         )
 
         industry = profile.get(
-
             "industry",
-
             "Technology",
-
         )
 
         return (
-
-            f"Executive Leader with {experience} years of experience delivering "
-
-            f"commercial growth, strategic leadership, operational excellence, "
-
-            f"P&L ownership, customer success and business transformation across "
-
-            f"{industry}. Strong alignment for the position of {role}."
-
+            f"Executive Leader with {experience} years of experience "
+            f"delivering commercial growth, strategic leadership, "
+            f"operational excellence, P&L ownership, customer success "
+            f"and business transformation across {industry}. "
+            f"Strong alignment for the position of {role}."
         )
-        # --------------------------------------------------
+
+    # --------------------------------------------------
 
     def _format_keywords(
         self,
@@ -250,15 +228,8 @@ RECOMMENDATIONS
             return "No keywords identified."
 
         return "\n".join(
-
-            [
-
-                f"• {keyword.title()}"
-
-                for keyword in keywords
-
-            ]
-
+            f"• {keyword.title()}"
+            for keyword in keywords
         )
 
     # --------------------------------------------------
@@ -273,15 +244,8 @@ RECOMMENDATIONS
             return "No recommendations."
 
         return "\n".join(
-
-            [
-
-                f"• {item}"
-
-                for item in recommendations
-
-            ]
-
+            f"• {item}"
+            for item in recommendations
         )
 
     # --------------------------------------------------
@@ -293,11 +257,8 @@ RECOMMENDATIONS
     ):
 
         return self.tailor_resume(
-
             profile,
-
             job,
-
         )
 
     # --------------------------------------------------
@@ -309,11 +270,8 @@ RECOMMENDATIONS
     ):
 
         return self.tailor_resume(
-
             profile,
-
             job,
-
         )
 
     # --------------------------------------------------
@@ -325,11 +283,8 @@ RECOMMENDATIONS
     ):
 
         return self.tailor_resume(
-
             profile,
-
             job,
-
         )
 
     # --------------------------------------------------
@@ -341,11 +296,8 @@ RECOMMENDATIONS
     ):
 
         return self.tailor_resume(
-
             profile,
-
             job,
-
         )
 
     # --------------------------------------------------
@@ -357,39 +309,39 @@ RECOMMENDATIONS
     ):
 
         resume = self.tailor_resume(
-
             profile,
-
             job,
-
         )
 
         fit = self.analyze_job_fit(
-
             profile,
-
             job,
-
         )
 
         return {
 
             "resume": resume,
 
-            "ats_score": fit["match_score"],
+            "ats_score": fit[
+                "match_score"
+            ],
 
-            "matched_skills": fit["matched_skills"],
+            "matched_skills": fit[
+                "matched_skills"
+            ],
 
-            "missing_skills": fit["missing_skills"],
+            "missing_skills": fit[
+                "missing_skills"
+            ],
 
-            "recommended_keywords": fit["recommended_keywords"],
+            "recommended_keywords": fit[
+                "recommended_keywords"
+            ],
 
-            "executive_summary": self.generate_executive_summary(
-
-                profile,
-
-                job,
-
-            ),
+            "executive_summary":
+                self.generate_executive_summary(
+                    profile,
+                    job,
+                ),
 
         }

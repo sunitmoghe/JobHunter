@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 
 from modules.saved_jobs_manager import SavedJobsManager
 
@@ -7,14 +6,26 @@ from modules.saved_jobs_manager import SavedJobsManager
 st.set_page_config(
     page_title="Saved Jobs",
     page_icon="💾",
-    layout="wide"
+    layout="wide",
 )
 
-st.title("💾 Saved Executive Jobs")
+
+st.title("💾 Saved Jobs")
+
+st.caption(
+    "Your saved executive job opportunities."
+)
+
 
 manager = SavedJobsManager()
 
 jobs = manager.load_jobs()
+
+
+st.subheader(
+    f"📊 Saved Jobs: {len(jobs)}"
+)
+
 
 if not jobs:
 
@@ -22,160 +33,107 @@ if not jobs:
         "No saved jobs yet."
     )
 
-    st.stop()
+else:
 
+    for index, job in enumerate(
+        jobs,
+        start=1,
+    ):
 
-df = pd.DataFrame(jobs)
-
-
-st.sidebar.header("Filters")
-
-
-company_filter = st.sidebar.selectbox(
-
-    "Company",
-
-    ["All"] + sorted(df["company"].fillna("").unique().tolist())
-
-)
-
-
-country_filter = st.sidebar.selectbox(
-
-    "Country",
-
-    ["All"] + sorted(df["country"].fillna("").unique().tolist())
-
-)
-
-
-search = st.sidebar.text_input(
-    "Search Role"
-)
-
-
-filtered = df.copy()
-
-
-if company_filter != "All":
-
-    filtered = filtered[
-        filtered["company"] == company_filter
-    ]
-
-
-if country_filter != "All":
-
-    filtered = filtered[
-        filtered["country"] == country_filter
-    ]
-
-
-if search:
-
-    filtered = filtered[
-        filtered["role"].str.contains(
-            search,
-            case=False,
-            na=False
-        )
-    ]
-
-
-col1, col2, col3 = st.columns(3)
-
-
-with col1:
-
-    st.metric(
-        "Saved Jobs",
-        len(filtered)
-    )
-
-
-with col2:
-
-    st.metric(
-        "Companies",
-        filtered["company"].nunique()
-    )
-
-
-with col3:
-
-    st.metric(
-        "Countries",
-        filtered["country"].nunique()
-    )
-
-
-st.divider()
-
-
-for _, job in filtered.iterrows():
-
-    with st.container():
-
-        st.subheader(job.get("role", ""))
-
-        st.caption(
-            f"{job.get('company','')} • {job.get('location','')}"
+        title = job.get(
+            "title",
+            job.get(
+                "role",
+                "Executive Position",
+            ),
         )
 
-        st.write(
-            f"**Country:** {job.get('country','')}"
+        company = job.get(
+            "company",
+            "Company",
         )
 
-        st.write(
-            f"**Salary:** {job.get('salary','Not Available')}"
+        location = job.get(
+            "location",
+            "",
         )
 
-        st.write(
-            f"**Saved On:** {job.get('saved_date','')}"
+        score = job.get(
+            "executive_score",
+            0,
         )
 
-        if job.get("link"):
+        apply_link = job.get(
+            "apply_link",
+            "",
+        )
 
-            st.link_button(
-                "Open Job",
-                job["link"]
-            )
+        saved_on = job.get(
+            "saved_on",
+            "",
+        )
 
-        if st.button(
 
-            "🗑 Remove",
-
-            key=f"{job.get('company')}_{job.get('role')}"
-
+        with st.container(
+            border=True
         ):
 
-            manager.remove_job(
-
-                job.get("company", ""),
-
-                job.get("role", ""),
-
-                job.get("location", "")
-
+            st.markdown(
+                f"### {index}. {title}"
             )
 
-            st.success(
-                "Job removed."
+            st.write(
+                f"**Company:** {company}"
             )
 
-            st.rerun()
+            if location:
 
-        st.divider()
+                st.write(
+                    f"**Location:** {location}"
+                )
+
+            col1, col2, col3 = st.columns(
+                3
+            )
 
 
-st.download_button(
+            with col1:
 
-    "⬇ Export Saved Jobs",
+                st.metric(
+                    "Executive Fit",
+                    f"{score}%",
+                )
 
-    filtered.to_csv(index=False),
 
-    "saved_jobs.csv",
+            with col2:
 
-    "text/csv"
+                st.write(
+                    "**Saved:**"
+                )
 
-)
+                st.write(
+                    saved_on
+                )
+
+
+            with col3:
+
+                if apply_link:
+
+                    st.link_button(
+                        "🚀 Apply Now",
+                        apply_link,
+                        use_container_width=True,
+                    )
+
+
+            if st.button(
+                "🗑️ Remove",
+                key=f"remove_{index}",
+            ):
+
+                manager.remove_job(
+                    job
+                )
+
+                st.rerun()

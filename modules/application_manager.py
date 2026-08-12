@@ -1,146 +1,156 @@
-from modules.database import DatabaseManager
+import json
+import os
 from datetime import datetime
 
 
 class ApplicationManager:
 
+    def __init__(
+        self,
+        file_path="data/applications.json",
+    ):
+
+        self.file_path = file_path
+
+        directory = os.path.dirname(
+            self.file_path
+        )
+
+        if directory:
+            os.makedirs(
+                directory,
+                exist_ok=True,
+            )
+
+        if not os.path.exists(
+            self.file_path
+        ):
+
+            with open(
+                self.file_path,
+                "w",
+                encoding="utf-8",
+            ) as file:
+
+                json.dump(
+                    [],
+                    file,
+                    indent=4,
+                )
+
+    def get_all_applications(self):
+
+        try:
+
+            with open(
+                self.file_path,
+                "r",
+                encoding="utf-8",
+            ) as file:
+
+                data = json.load(file)
+
+                if isinstance(
+                    data,
+                    list,
+                ):
+
+                    return data
+
+        except Exception:
+
+            pass
+
+        return []
+
     def add_application(
         self,
-        company,
-        role,
-        country,
-        location,
-        job_link="",
-        contact_person="",
-        contact_email="",
-        status="Applied",
-        follow_up_date="",
-        notes=""
+        job=None,
+        role=None,
+        country=None,
+        location=None,
     ):
 
-        db = DatabaseManager()
+        applications = (
+            self.get_all_applications()
+        )
 
-        # Prevent duplicate applications
-        db.cursor.execute(
-            """
-            SELECT id
-            FROM applications
-            WHERE company=?
-            AND role=?
-            AND country=?
-            """,
-            (
-                company,
-                role,
-                country
+        if isinstance(
+            job,
+            dict,
+        ):
+
+            application = dict(job)
+
+            role = application.get(
+                "role",
+                application.get(
+                    "title",
+                    role or "",
+                ),
+            )
+
+            country = application.get(
+                "country",
+                country or "",
+            )
+
+            location = application.get(
+                "location",
+                location or "",
+            )
+
+        else:
+
+            application = {
+                "role": role or "",
+                "country": country or "",
+                "location": location or "",
+            }
+
+        application["job_title"] = (
+            application.get(
+                "title",
+                application.get(
+                    "role",
+                    role or "Executive Position",
+                ),
             )
         )
 
-        existing = db.cursor.fetchone()
+        application["role"] = role or ""
 
-        if existing:
+        application["country"] = (
+            country or ""
+        )
 
-            db.close()
-            return False
+        application["location"] = (
+            location or ""
+        )
 
-        db.cursor.execute(
-            """
-            INSERT INTO applications
-            (
-                company,
-                role,
-                country,
-                location,
-                job_link,
-                contact_person,
-                contact_email,
-                status,
-                application_date,
-                follow_up_date,
-                notes
-            )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
-            """,
-            (
-                company,
-                role,
-                country,
-                location,
-                job_link,
-                contact_person,
-                contact_email,
-                status,
-                datetime.now().strftime("%Y-%m-%d"),
-                follow_up_date,
-                notes
+        application["status"] = "Applied"
+
+        application["applied_on"] = (
+            datetime.now().strftime(
+                "%d-%m-%Y"
             )
         )
 
-        db.connection.commit()
+        applications.append(
+            application
+        )
 
-        db.close()
+        with open(
+            self.file_path,
+            "w",
+            encoding="utf-8",
+        ) as file:
+
+            json.dump(
+                applications,
+                file,
+                indent=4,
+                ensure_ascii=False,
+            )
 
         return True
-
-    def get_applications(self):
-
-        db = DatabaseManager()
-
-        db.cursor.execute(
-            """
-            SELECT *
-            FROM applications
-            ORDER BY application_date DESC,id DESC
-            """
-        )
-
-        applications = db.cursor.fetchall()
-
-        db.close()
-
-        return applications
-
-    def delete_application(
-        self,
-        application_id
-    ):
-
-        db = DatabaseManager()
-
-        db.cursor.execute(
-            """
-            DELETE FROM applications
-            WHERE id=?
-            """,
-            (
-                application_id,
-            )
-        )
-
-        db.connection.commit()
-
-        db.close()
-
-    def update_status(
-        self,
-        application_id,
-        status
-    ):
-
-        db = DatabaseManager()
-
-        db.cursor.execute(
-            """
-            UPDATE applications
-            SET status=?
-            WHERE id=?
-            """,
-            (
-                status,
-                application_id
-            )
-        )
-
-        db.connection.commit()
-
-        db.close()

@@ -5,13 +5,9 @@ import re
 
 class ResumeIntelligence:
 
-    def __init__(
-        self,
-        resume_text
-    ):
+    def __init__(self, resume_text):
 
         self.text = str(resume_text)
-
         self.lower_text = self.text.lower()
 
     # --------------------------------------------------
@@ -23,7 +19,6 @@ class ResumeIntelligence:
             line = line.strip()
 
             if len(line) > 3:
-
                 return line
 
         return "Unknown"
@@ -33,11 +28,8 @@ class ResumeIntelligence:
     def extract_email(self):
 
         match = re.search(
-
             r"[\w\.-]+@[\w\.-]+\.\w+",
-
             self.text
-
         )
 
         return match.group(0) if match else ""
@@ -47,45 +39,34 @@ class ResumeIntelligence:
     def extract_phone(self):
 
         match = re.search(
-
             r"(\+?\d[\d\s\-\(\)]{8,}\d)",
-
             self.text
-
         )
 
-        return match.group(0) if match else ""
+        return match.group(0).strip() if match else ""
 
     # --------------------------------------------------
 
     def extract_linkedin(self):
 
         match = re.search(
-
             r"(https?://)?(www\.)?linkedin\.com/[^\s]+",
-
             self.text,
-
             re.IGNORECASE
-
         )
 
-        return match.group(0) if match else ""
+        return match.group(0).rstrip(".,)") if match else ""
 
     # --------------------------------------------------
 
     def extract_experience(self):
 
         match = re.search(
-
             r"(\d+)\+?\s*years",
-
             self.lower_text
-
         )
 
         if match:
-
             return f"{match.group(1)}+ Years"
 
         return "Unknown"
@@ -102,34 +83,44 @@ class ResumeIntelligence:
         )
 
         if not os.path.exists(skills_file):
-
             return found
 
         try:
 
             with open(
-
                 skills_file,
-
                 "r",
-
                 encoding="utf-8"
+            ) as file:
 
-            ) as f:
+                skills_data = json.load(file)
 
-                skills = json.load(f)
+            if isinstance(skills_data, dict):
 
-            for category, values in skills.items():
+                for values in skills_data.values():
 
-                for skill in values:
+                    if not isinstance(values, list):
+                        continue
 
-                    if skill.lower() in self.lower_text:
+                    for skill in values:
 
+                        skill = str(skill).strip()
+
+                        if skill and skill.lower() in self.lower_text:
+                            found.append(skill)
+
+            elif isinstance(skills_data, list):
+
+                for skill in skills_data:
+
+                    skill = str(skill).strip()
+
+                    if skill and skill.lower() in self.lower_text:
                         found.append(skill)
 
         except Exception:
 
-            pass
+            return sorted(set(found))
 
         return sorted(set(found))
 
@@ -151,7 +142,9 @@ class ResumeIntelligence:
 
             "skills": self.extract_skills(),
 
-            "word_count": len(self.text.split())
+            "word_count": len(
+                self.text.split()
+            )
 
         }
 
@@ -166,25 +159,27 @@ if __name__ == "__main__":
 
     resume_file = None
 
-    for file in os.listdir("data"):
+    data_folder = "data"
 
-        if file.lower().endswith(
-            (".pdf", ".docx")
-        ):
+    if os.path.exists(data_folder):
 
-            resume_file = os.path.join(
-                "data",
-                file
-            )
+        for file_name in os.listdir(data_folder):
 
-            break
+            if file_name.lower().endswith(
+                (".pdf", ".docx")
+            ):
+
+                resume_file = os.path.join(
+                    data_folder,
+                    file_name
+                )
+
+                break
 
     if resume_file is None:
 
         raise FileNotFoundError(
-
             "No PDF or DOCX resume found inside data folder."
-
         )
 
     parser = ResumeParser(
@@ -197,4 +192,10 @@ if __name__ == "__main__":
         resume
     ).build_profile()
 
-    print(profile)
+    print(
+        json.dumps(
+            profile,
+            indent=4,
+            ensure_ascii=False
+        )
+    )

@@ -1,69 +1,58 @@
 import streamlit as st
-from modules.executive_ai_agent import ExecutiveAIAgent
 
+def success_box(message):
+    st.success(message)
 
-st.set_page_config(
-    page_title="Recruiter Intelligence",
-    page_icon="👥",
-    layout="wide",
-)
+def error_box(message):
+    st.error(message)
 
-st.title("👥 Recruiter Intelligence")
+def info_box(message):
+    st.info(message)
 
+def warning_box(message):
+    st.warning(message)
 
-agent = ExecutiveAIAgent()
+def page_header(title, subtitle=None, icon=""):
+    if icon:
+        st.title(f"{icon} {title}")
+    else:
+        st.title(title)
 
-jobs = st.session_state.get("cached_jobs", [])
+    if subtitle:
+        st.caption(subtitle)
 
-if not jobs:
-    jobs = agent.search_all_roles(max_roles=20)
-    st.session_state["cached_jobs"] = jobs
+def section_header(title, icon=""):
+    if icon:
+        st.subheader(f"{icon} {title}")
+    else:
+        st.subheader(title)
 
-if not jobs:
+def metric_card(label, value):
+    st.metric(label, value)
 
-    st.warning("No jobs found.")
+def divider():
+    st.divider()
 
-    st.stop()
+def job_card(job):
+    title = job.get("title", job.get("role", "Executive Position"))
+    company = job.get("company", "Company")
+    location = job.get("location", "")
+    score = job.get("executive_score", job.get("score", 0))
+    apply_link = job.get("apply_link", "")
 
-for job in jobs:
+    st.markdown(f"### {title}")
+    st.write(f"**Company:** {company}")
 
-    recruiter = job.get("recruiter")
+    if location:
+        st.write(f"**Location:** {location}")
 
-    with st.expander(
-        f"{job.get('role','Executive Role')} • {job.get('company','Company')}",
-        expanded=False,
-    ):
+    st.metric("Executive Fit", f"{score}%")
 
-        if recruiter:
+    if apply_link:
+        st.link_button(
+            "🚀 Apply Now",
+            apply_link,
+            use_container_width=True
+        )
 
-            st.success("👤 Recruiter Found")
-
-            st.write(recruiter)
-
-        else:
-
-            st.info("Recruiter data will be available in the next version.")
-
-        st.write("### Job Details")
-
-        st.write(f"**Company:** {job.get('company','Unknown')}")
-
-        st.write(f"**Country:** {job.get('country','Unknown')}")
-
-        st.write(f"**Executive Score:** {job.get('executive_score',0)}")
-
-        st.write(f"**Priority:** {job.get('priority','Normal')}")
-
-        if job.get("apply_link"):
-
-            st.link_button(
-                "🌍 Apply",
-                job["apply_link"]
-            )
-
-        elif job.get("url"):
-
-            st.link_button(
-                "🌍 Apply",
-                job["url"]
-            )
+    st.divider()

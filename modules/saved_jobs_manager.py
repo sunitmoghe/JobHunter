@@ -1,297 +1,189 @@
 import json
 import os
 from datetime import datetime
-import uuid
 
 
 class SavedJobsManager:
 
-    def __init__(self):
+    def __init__(
+        self,
+        file_path="data/saved_jobs.json",
+    ):
 
-        self.database = "database"
+        self.file_path = file_path
 
-        self.file = os.path.join(
-            self.database,
-            "saved_jobs.json"
+        directory = os.path.dirname(
+            self.file_path
         )
 
-        self.ensure_database()
+        if directory:
+            os.makedirs(
+                directory,
+                exist_ok=True,
+            )
 
-    # --------------------------------------------------
-
-    def ensure_database(self):
-
-        os.makedirs(
-            self.database,
-            exist_ok=True
-        )
-
-        if not os.path.exists(self.file):
+        if not os.path.exists(
+            self.file_path
+        ):
 
             with open(
-                self.file,
+                self.file_path,
                 "w",
-                encoding="utf-8"
-            ) as f:
+                encoding="utf-8",
+            ) as file:
 
                 json.dump(
                     [],
-                    f,
-                    indent=4
+                    file,
+                    indent=4,
                 )
 
-    # --------------------------------------------------
-
     def load_jobs(self):
-
-        self.ensure_database()
 
         try:
 
             with open(
-                self.file,
+                self.file_path,
                 "r",
-                encoding="utf-8"
-            ) as f:
+                encoding="utf-8",
+            ) as file:
 
-                return json.load(f)
+                jobs = json.load(file)
+
+                if isinstance(
+                    jobs,
+                    list,
+                ):
+
+                    return jobs
 
         except Exception:
 
-            return []
+            pass
 
-    # --------------------------------------------------
+        return []
 
-    def save_jobs(self, jobs):
-
-        with open(
-            self.file,
-            "w",
-            encoding="utf-8"
-        ) as f:
-
-            json.dump(
-                jobs,
-                f,
-                indent=4,
-                ensure_ascii=False
-            )
-
-    # --------------------------------------------------
-
-    def save_job(self, job):
+    def save_job(
+        self,
+        job,
+    ):
 
         jobs = self.load_jobs()
 
-        key = (
-
-            str(job.get("company", "")).lower(),
-
-            str(
-                job.get(
-                    "role",
-                    job.get(
-                        "title",
-                        ""
-                    )
-                )
-            ).lower(),
-
-            str(
-                job.get(
-                    "location",
-                    ""
-                )
-            ).lower()
-
+        job_id = self.get_job_id(
+            job
         )
 
         for existing in jobs:
 
-            existing_key = (
-
-                str(existing.get("company", "")).lower(),
-
-                str(
-                    existing.get(
-                        "role",
-                        existing.get(
-                            "title",
-                            ""
-                        )
-                    )
-                ).lower(),
-
-                str(
-                    existing.get(
-                        "location",
-                        ""
-                    )
-                ).lower()
-
-            )
-
-            if key == existing_key:
+            if (
+                self.get_job_id(existing)
+                == job_id
+            ):
 
                 return False
 
-        job["job_id"] = str(uuid.uuid4())
+        saved_job = dict(job)
 
-        job["saved_date"] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
+        saved_job[
+            "saved_on"
+        ] = datetime.now().strftime(
+            "%d-%m-%Y %H:%M"
         )
 
-        job["last_updated"] = job["saved_date"]
+        jobs.append(
+            saved_job
+        )
 
-        job["application_status"] = "Saved"
-
-        job["favorite"] = False
-
-        job["notes"] = ""
-
-        jobs.append(job)
-
-        self.save_jobs(jobs)
+        self._write_jobs(
+            jobs
+        )
 
         return True
 
-    # --------------------------------------------------
-
     def remove_job(
         self,
-        company,
-        role,
-        location
+        job,
     ):
 
         jobs = self.load_jobs()
 
-        filtered = []
+        job_id = self.get_job_id(
+            job
+        )
 
-        removed = False
+        updated = [
 
-        for job in jobs:
+            item
 
-            if (
+            for item in jobs
 
-                job.get(
-                    "company",
-                    ""
-                ).lower() == company.lower()
+            if self.get_job_id(item)
+            != job_id
 
-                and
+        ]
 
-                job.get(
-                    "role",
+        if len(updated) == len(jobs):
+
+            return False
+
+        self._write_jobs(
+            updated
+        )
+
+        return True
+
+    def get_job_id(
+        self,
+        job,
+    ):
+
+        return "|".join(
+            [
+                str(
                     job.get(
                         "title",
-                        ""
+                        job.get(
+                            "role",
+                            "",
+                        ),
                     )
-                ).lower() == role.lower()
+                ),
+                str(
+                    job.get(
+                        "company",
+                        "",
+                    )
+                ),
+                str(
+                    job.get(
+                        "location",
+                        "",
+                    )
+                ),
+                str(
+                    job.get(
+                        "apply_link",
+                        "",
+                    )
+                ),
+            ]
+        )
 
-                and
-
-                job.get(
-                    "location",
-                    ""
-                ).lower() == location.lower()
-
-            ):
-
-                removed = True
-
-                continue
-
-            filtered.append(job)
-
-        self.save_jobs(filtered)
-
-        return removed
-
-    # --------------------------------------------------
-
-    def update_status(
+    def _write_jobs(
         self,
-        job_id,
-        status
+        jobs,
     ):
 
-        jobs = self.load_jobs()
+        with open(
+            self.file_path,
+            "w",
+            encoding="utf-8",
+        ) as file:
 
-        for job in jobs:
-
-            if job.get("job_id") == job_id:
-
-                job["application_status"] = status
-
-                job["last_updated"] = datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-
-        self.save_jobs(jobs)
-
-    # --------------------------------------------------
-
-    def statistics(self):
-
-        jobs = self.load_jobs()
-
-        stats = {
-
-            "saved_jobs": len(jobs),
-
-            "applied": 0,
-
-            "interview": 0,
-
-            "offer": 0,
-
-            "rejected": 0
-
-        }
-
-        for job in jobs:
-
-            status = str(
-                job.get(
-                    "application_status",
-                    ""
-                )
-            ).lower()
-
-            if status == "applied":
-
-                stats["applied"] += 1
-
-            elif status == "interview":
-
-                stats["interview"] += 1
-
-            elif status == "offer":
-
-                stats["offer"] += 1
-
-            elif status == "rejected":
-
-                stats["rejected"] += 1
-
-        return stats
-
-
-if __name__ == "__main__":
-
-    manager = SavedJobsManager()
-
-    sample = {
-
-        "company": "Microsoft",
-
-        "role": "Sales Director",
-
-        "location": "London"
-
-    }
-
-    manager.save_job(sample)
-
-    print(manager.statistics())
+            json.dump(
+                jobs,
+                file,
+                indent=4,
+                ensure_ascii=False,
+            )

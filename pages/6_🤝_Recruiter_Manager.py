@@ -3,175 +3,513 @@ import streamlit as st
 from modules.recruiter_manager import RecruiterManager
 
 
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
-
 st.set_page_config(
     page_title="Recruiter Manager",
     page_icon="🤝",
-    layout="wide"
+    layout="wide",
 )
 
 
-# --------------------------------------------------
-# PAGE HEADER
-# --------------------------------------------------
+st.title("🤝 Recruiter Manager")
 
-st.title("🤝 Executive Recruiter Manager")
-
-st.write(
-    "Manage executive recruiters, relationships and follow-ups."
+st.caption(
+    "Manage recruiter relationships, contacts and follow-ups."
 )
 
-st.divider()
-
-
-# --------------------------------------------------
-# INITIALISE MANAGER
-# --------------------------------------------------
 
 manager = RecruiterManager()
 
 
-# --------------------------------------------------
+# ==================================================
 # LOAD RECRUITERS
-# --------------------------------------------------
+# ==================================================
 
-recruiters = manager.get_recruiters()
+try:
+
+    recruiters = manager.get_all_recruiters()
+
+except Exception as error:
+
+    st.error(
+        "Unable to load recruiters."
+    )
+
+    st.exception(error)
+
+    recruiters = []
 
 
-# --------------------------------------------------
-# DASHBOARD METRICS
-# --------------------------------------------------
+# ==================================================
+# STATISTICS
+# ==================================================
 
-stats = manager.get_statistics()
+total_recruiters = len(
+    recruiters
+)
+
+contacted_recruiters = sum(
+    1
+    for recruiter in recruiters
+    if recruiter.get(
+        "follow_up_status",
+        "",
+    ) in [
+        "Contacted",
+        "Responded",
+        "Interview",
+    ]
+)
+
+follow_up_required = sum(
+    1
+    for recruiter in recruiters
+    if recruiter.get(
+        "follow_up_status",
+        "",
+    ) == "Follow-up Required"
+)
+
+interviews = sum(
+    1
+    for recruiter in recruiters
+    if recruiter.get(
+        "follow_up_status",
+        "",
+    ) == "Interview"
+)
+
+
+# ==================================================
+# KPI CARDS
+# ==================================================
 
 col1, col2, col3, col4 = st.columns(4)
 
+
 with col1:
-    st.metric("Recruiters", stats["total_recruiters"])
+
+    st.metric(
+        "Recruiters",
+        total_recruiters,
+    )
+
 
 with col2:
-    st.metric("Contacted", stats["contacted"])
+
+    st.metric(
+        "Contacted",
+        contacted_recruiters,
+    )
+
 
 with col3:
-    st.metric("Responded", stats["responded"])
+
+    st.metric(
+        "Follow-up Required",
+        follow_up_required,
+    )
+
 
 with col4:
-    st.metric("Response Rate", f"{stats['response_rate']}%")
+
+    st.metric(
+        "Interviews",
+        interviews,
+    )
+
 
 st.divider()
 
-# --------------------------------------------------
-# ADD NEW RECRUITER
-# --------------------------------------------------
 
-st.subheader("➕ Add Executive Recruiter")
+# ==================================================
+# ADD RECRUITER
+# ==================================================
 
-with st.form("add_recruiter_form"):
+st.subheader(
+    "➕ Add Recruiter"
+)
 
-    name = st.text_input("Recruiter Name")
 
-    company = st.text_input("Company")
+with st.form(
+    "add_recruiter_form"
+):
 
-    designation = st.text_input("Designation")
+    col1, col2 = st.columns(2)
 
-    email = st.text_input("Email")
 
-    linkedin = st.text_input("LinkedIn URL")
+    with col1:
 
-    country = st.text_input("Country")
+        name = st.text_input(
+            "Recruiter Name"
+        )
 
-    notes = st.text_area("Notes")
+        company = st.text_input(
+            "Company"
+        )
 
-    submitted = st.form_submit_button("Save Recruiter")
+        designation = st.text_input(
+            "Designation"
+        )
+
+
+    with col2:
+
+        email = st.text_input(
+            "Email"
+        )
+
+        phone = st.text_input(
+            "Phone"
+        )
+
+        linkedin = st.text_input(
+            "LinkedIn URL"
+        )
+
+
+    submitted = st.form_submit_button(
+        "💾 Save Recruiter",
+        use_container_width=True,
+    )
+
 
     if submitted:
 
-        recruiter = {
+        if not name.strip():
 
-            "name": name,
+            st.error(
+                "Recruiter name is required."
+            )
 
-            "company": company,
+        else:
 
-            "designation": designation,
+            try:
 
-            "email": email,
+                manager.add_recruiter(
+                    {
+                        "name":
+                            name.strip(),
 
-            "linkedin": linkedin,
+                        "company":
+                            company.strip(),
 
-            "country": country,
+                        "designation":
+                            designation.strip(),
 
-            "notes": notes
+                        "email":
+                            email.strip(),
 
-        }
+                        "phone":
+                            phone.strip(),
 
-        manager.add_recruiter(recruiter)
+                        "linkedin":
+                            linkedin.strip(),
 
-        st.success("✅ Recruiter saved successfully.")
+                        "follow_up_status":
+                            "Not Contacted",
 
-        st.rerun()
+                        "follow_up_date":
+                            "",
 
-# --------------------------------------------------
-# RECRUITER DATABASE
-# --------------------------------------------------
+                        "notes":
+                            "",
+                    }
+                )
+
+                st.success(
+                    "Recruiter saved successfully."
+                )
+
+                st.rerun()
+
+
+            except Exception as error:
+
+                st.error(
+                    "Unable to save recruiter."
+                )
+
+                st.exception(error)
+
 
 st.divider()
 
-st.subheader("📋 Recruiter Database")
 
-recruiters = manager.get_recruiters()
+# ==================================================
+# RECRUITER LIST
+# ==================================================
+
+st.subheader(
+    f"👥 Recruiter Database ({len(recruiters)})"
+)
+
 
 if not recruiters:
 
-    st.info("No recruiters have been added yet.")
+    st.info(
+        "No recruiters added yet."
+    )
+
 
 else:
 
-    search = st.text_input(
-        "🔍 Search Recruiters"
-    )
+    for index, recruiter in enumerate(
+        recruiters,
+        start=1,
+    ):
 
-    if search:
+        name = recruiter.get(
+            "name",
+            "Recruiter",
+        )
 
-        recruiters = manager.search_recruiters(search)
+        company = recruiter.get(
+            "company",
+            "",
+        )
 
-    st.write(
-        f"Showing {len(recruiters)} recruiter(s)"
-    )
+        designation = recruiter.get(
+            "designation",
+            "",
+        )
 
-    for i, recruiter in enumerate(recruiters):
+        email = recruiter.get(
+            "email",
+            "",
+        )
 
-        with st.expander(
-            f"{recruiter.get('name','Unknown')} | {recruiter.get('company','')}"
+        phone = recruiter.get(
+            "phone",
+            "",
+        )
+
+        linkedin = recruiter.get(
+            "linkedin",
+            "",
+        )
+
+        status = recruiter.get(
+            "follow_up_status",
+            "Not Contacted",
+        )
+
+        follow_up_date = recruiter.get(
+            "follow_up_date",
+            "",
+        )
+
+        notes = recruiter.get(
+            "notes",
+            "",
+        )
+
+
+        if status not in [
+            "Not Contacted",
+            "Contacted",
+            "Follow-up Required",
+            "Responded",
+            "Interview",
+            "Closed",
+        ]:
+
+            status = "Not Contacted"
+
+
+        # --------------------------------------------------
+        # CARD
+        # --------------------------------------------------
+
+        with st.container(
+            border=True
         ):
 
-            st.write(
-                f"**Designation:** {recruiter.get('designation','')}"
+            st.markdown(
+                f"### {index}. {name}"
             )
 
-            st.write(
-                f"**Country:** {recruiter.get('country','')}"
+
+            if company:
+
+                st.write(
+                    f"**Company:** {company}"
+                )
+
+
+            if designation:
+
+                st.write(
+                    f"**Designation:** {designation}"
+                )
+
+
+            if email:
+
+                st.write(
+                    f"**Email:** {email}"
+                )
+
+
+            if phone:
+
+                st.write(
+                    f"**Phone:** {phone}"
+                )
+
+
+            if linkedin:
+
+                st.markdown(
+                    f"[🔗 LinkedIn Profile]({linkedin})"
+                )
+
+
+            st.divider()
+
+
+            # --------------------------------------------------
+            # FOLLOW-UP
+            # --------------------------------------------------
+
+            st.markdown(
+                "#### 📅 Follow-up Management"
             )
 
-            st.write(
-                f"**Email:** {recruiter.get('email','')}"
+
+            col1, col2 = st.columns(2)
+
+
+            with col1:
+
+                selected_status = st.selectbox(
+                    "Status",
+                    [
+                        "Not Contacted",
+                        "Contacted",
+                        "Follow-up Required",
+                        "Responded",
+                        "Interview",
+                        "Closed",
+                    ],
+                    index=[
+                        "Not Contacted",
+                        "Contacted",
+                        "Follow-up Required",
+                        "Responded",
+                        "Interview",
+                        "Closed",
+                    ].index(status),
+                    key=f"status_{index}",
+                )
+
+
+            with col2:
+
+                selected_date = st.text_input(
+                    "Next Follow-up Date",
+                    value=follow_up_date,
+                    key=f"date_{index}",
+                )
+
+
+            selected_notes = st.text_area(
+                "Notes",
+                value=notes,
+                key=f"notes_{index}",
             )
 
-            st.write(
-                f"**LinkedIn:** {recruiter.get('linkedin','')}"
-            )
 
-            st.write(
-                f"**Status:** {recruiter.get('status','New')}"
-            )
+            # --------------------------------------------------
+            # UPDATE
+            # --------------------------------------------------
 
-            st.write(
-                f"**Last Contact:** {recruiter.get('last_contact','')}"
-            )
+            if st.button(
+                "💾 Update Recruiter",
+                key=f"update_{index}",
+                use_container_width=True,
+            ):
 
-            st.write(
-                f"**Notes:** {recruiter.get('notes','')}"
-            )
+                updates = {
 
+                    "name":
+                        name,
+
+                    "company":
+                        company,
+
+                    "designation":
+                        designation,
+
+                    "email":
+                        email,
+
+                    "phone":
+                        phone,
+
+                    "linkedin":
+                        linkedin,
+
+                    "follow_up_status":
+                        selected_status,
+
+                    "follow_up_date":
+                        selected_date,
+
+                    "notes":
+                        selected_notes,
+                }
+
+
+                try:
+
+                    current_recruiters = (
+                        manager._load()
+                    )
+
+
+                    recruiter_index = (
+                        index - 1
+                    )
+
+
+                    if (
+                        0
+                        <= recruiter_index
+                        < len(
+                            current_recruiters
+                        )
+                    ):
+
+                        current_recruiters[
+                            recruiter_index
+                        ].update(
+                            updates
+                        )
+
+
+                        manager._save(
+                            current_recruiters
+                        )
+
+
+                        st.success(
+                            "Recruiter updated successfully."
+                        )
+
+                        st.rerun()
+
+
+                    else:
+
+                        st.error(
+                            "Recruiter not found."
+                        )
+
+
+                except Exception as error:
+
+                    st.error(
+                        "Unable to update recruiter."
+                    )
+
+                    st.exception(error)

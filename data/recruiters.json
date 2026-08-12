@@ -1,0 +1,26 @@
+[
+    {
+        "name": "Sunit",
+        "company": "",
+        "designation": "",
+        "email": "",
+        "linkedin": "",
+        "phone": "",
+        "created_on": "12-08-2026",
+        "follow_up_status": "Closed",
+        "follow_up_date": "",
+        "notes": ""
+    },
+    {
+        "name": "M",
+        "company": "LT",
+        "designation": "Head",
+        "email": "",
+        "linkedin": "",
+        "phone": "",
+        "created_on": "12-08-2026",
+        "follow_up_status": "Contacted",
+        "follow_up_date": "",
+        "notes": ""
+    }
+]

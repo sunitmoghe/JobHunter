@@ -1,118 +1,177 @@
 import streamlit as st
-import pandas as pd
 
 from modules.application_manager import ApplicationManager
 
-from modules.ui_components import (
-    page_header,
-    section_header,
-    success_box,
-    empty_state,
-)
 
 st.set_page_config(
-    page_title="Applications Tracker",
+    page_title="Applications",
     page_icon="📌",
     layout="wide",
 )
 
-page_header(
-    "📌 Executive Application Tracker",
-    "Track and manage your global executive job applications."
+
+st.title(
+    "📌 Applications Tracker"
 )
+
+st.caption(
+    "Track and manage your executive job applications."
+)
+
 
 manager = ApplicationManager()
 
-tab1, tab2 = st.tabs(
-    [
-        "➕ Add Application",
-        "📋 Application Pipeline",
-    ]
+applications = (
+    manager.get_all_applications()
 )
 
-# --------------------------------------------------
-# ADD APPLICATION
-# --------------------------------------------------
 
-with tab1:
+st.subheader(
+    f"📊 Applications: {len(applications)}"
+)
 
-    section_header("New Executive Application")
 
-    company = st.text_input(
-        "Company"
+if not applications:
+
+    st.info(
+        "No applications recorded yet."
     )
 
-    role = st.text_input(
-        "Role"
-    )
+else:
 
-    country = st.text_input(
-        "Country"
-    )
-
-    location = st.text_input(
-        "Location"
-    )
-
-    status = st.selectbox(
-        "Application Status",
-        [
-            "Applied",
-            "Recruiter Contacted",
-            "Interview",
-            "Offer",
-            "Rejected",
-        ],
-    )
-
-    notes = st.text_area(
-        "Notes"
-    )
-
-    if st.button(
-        "💾 Save Application",
-        type="primary",
+    for index, application in enumerate(
+        applications,
+        start=1,
     ):
 
-        manager.add_application(
-            company,
-            role,
-            country,
-            location,
-            status,
-            notes,
+        title = application.get(
+            "job_title",
+            application.get(
+                "title",
+                application.get(
+                    "role",
+                    "Executive Position",
+                ),
+            ),
         )
 
-        success_box(
-            "✅ Application saved successfully."
+        company = application.get(
+            "company",
+            "Company",
         )
 
-# --------------------------------------------------
-# APPLICATION PIPELINE
-# --------------------------------------------------
-
-with tab2:
-
-    section_header(
-        "Application Pipeline"
-    )
-
-    applications = manager.get_applications()
-
-    if applications:
-
-        df = pd.DataFrame(
-            applications
+        location = application.get(
+            "location",
+            "",
         )
 
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
+        status = application.get(
+            "status",
+            "Applied",
         )
 
-    else:
-
-        empty_state(
-            "No applications tracked yet."
+        applied_on = application.get(
+            "applied_on",
+            "",
         )
+
+        apply_link = application.get(
+            "apply_link",
+            "",
+        )
+
+
+        with st.container(
+            border=True
+        ):
+
+            st.markdown(
+                f"### {index}. {title}"
+            )
+
+            st.write(
+                f"**Company:** {company}"
+            )
+
+            if location:
+
+                st.write(
+                    f"**Location:** {location}"
+                )
+
+
+            col1, col2, col3 = st.columns(
+                3
+            )
+
+
+            with col1:
+
+                new_status = st.selectbox(
+                    "Status",
+                    [
+                        "Applied",
+                        "Interview",
+                        "Offer",
+                        "Rejected",
+                        "Withdrawn",
+                    ],
+                    index=[
+                        "Applied",
+                        "Interview",
+                        "Offer",
+                        "Rejected",
+                        "Withdrawn",
+                    ].index(
+                        status
+                    )
+                    if status
+                    in [
+                        "Applied",
+                        "Interview",
+                        "Offer",
+                        "Rejected",
+                        "Withdrawn",
+                    ]
+                    else 0,
+                    key=f"status_{index}",
+                )
+
+
+            with col2:
+
+                st.write(
+                    "**Applied On:**"
+                )
+
+                st.write(
+                    applied_on
+                )
+
+
+            with col3:
+
+                if apply_link:
+
+                    st.link_button(
+                        "🔗 Open Job",
+                        apply_link,
+                        use_container_width=True,
+                    )
+
+
+            if new_status != status:
+
+                if manager.update_status(
+                    index - 1,
+                    new_status,
+                ):
+
+                    st.success(
+                        f"Status updated to {new_status}."
+                    )
+
+                    st.rerun()
+
+
+            st.divider()

@@ -1,185 +1,291 @@
-import os
 import streamlit as st
 
-from modules.resume_parser import ResumeParser
 from modules.ats_matcher import ATSMatcher
+from modules.profile_manager import ProfileManager
 
-from modules.ui_components import (
-    page_header,
-    section_header,
-    metric_row,
-    success_box,
-    warning_box,
-    info_box,
-    error_box,
-    divider,
-    empty_state,
-)
 
 st.set_page_config(
-    page_title="AI ATS Matcher",
+    page_title="ATS Matcher",
     page_icon="🎯",
     layout="wide",
 )
 
-page_header(
-    "🎯 AI ATS Resume Matcher",
-    "Upload your resume and compare it with any executive job description."
+
+st.title("🎯 ATS Resume Matcher")
+
+st.caption(
+    "Match your Executive Profile against a target job description."
 )
 
-uploaded_resume = st.file_uploader(
-    "Upload Resume (PDF or DOCX)",
-    type=["pdf", "docx"],
+
+profile_manager = ProfileManager()
+profile = profile_manager.load_profile()
+
+
+if not profile:
+
+    st.error(
+        "Executive Profile not found. "
+        "Please complete Executive Profile first."
+    )
+
+    st.stop()
+
+
+st.success(
+    "✅ Executive Profile Loaded"
 )
+
+
+st.subheader("🎯 Target Position")
+
+
+col1, col2 = st.columns(2)
+
+
+with col1:
+
+    role = st.text_input(
+        "Target Executive Role",
+        value=str(
+            profile.get(
+                "current_role",
+                "Head of Sales",
+            )
+        ),
+    )
+
+
+with col2:
+
+    company = st.text_input(
+        "Company",
+        value="Confidential",
+    )
+
+
+st.subheader("📄 Job Description")
+
 
 job_description = st.text_area(
-    "Paste Job Description",
+    "Paste the complete Job Description",
     height=300,
+    placeholder=(
+        "Paste the complete job description here..."
+    ),
 )
 
-if uploaded_resume and job_description:
 
-    extension = os.path.splitext(
-        uploaded_resume.name
-    )[1].lower()
+st.divider()
 
-    temp_resume = f"temp_ats_resume{extension}"
 
-    with open(
-        temp_resume,
-        "wb"
-    ) as f:
+if st.button(
+    "🎯 Calculate ATS Match",
+    type="primary",
+    use_container_width=True,
+):
 
-        f.write(
-            uploaded_resume.getbuffer()
+    if not job_description.strip():
+
+        st.warning(
+            "Please paste a Job Description first."
         )
 
-    parser = ResumeParser(
-        temp_resume
-    )
+        st.stop()
 
-    resume_text = parser.read_resume()
 
-    matcher = ATSMatcher(
-        resume_text,
-        job_description
-    )
+    job = {
 
-    result = matcher.calculate_match()
+        "role": role.strip(),
 
-    divider()
+        "company": company.strip(),
 
-    section_header(
-        "🎯 ATS Compatibility Analysis"
-    )
+        "description": job_description.strip(),
 
-    readiness = (
-        "High"
-        if result.get(
-            "interview_probability",
-            0
-        ) >= 80
-        else "Medium"
-    )
+    }
 
-    metric_row(
-        [
-            (
-                "ATS Match Score",
-                f"{result['score']}%"
-            ),
-            (
-                "Interview Probability",
-                f"{result.get('interview_probability',0)}%"
-            ),
-            (
-                "AI Readiness",
-                readiness
-            ),
-        ]
-    )
 
-    divider()
+    try:
 
-    left, right = st.columns(2)
+        matcher = ATSMatcher()
 
-    with left:
-
-        section_header(
-            "✅ Matched Skills"
+        result = matcher.match(
+            profile,
+            job,
         )
 
-        if result.get("matched"):
 
-            for item in result["matched"]:
+        st.session_state[
+            "ats_result"
+        ] = result
 
-                success_box(
-                    f"{item['category']} → {item['skill']}"
-                )
 
-        else:
+    except Exception as error:
 
-            empty_state(
-                "No matching skills found."
+        st.error(
+            "ATS matching failed."
+        )
+
+        st.exception(error)
+
+
+if "ats_result" in st.session_state:
+
+    result = st.session_state[
+        "ats_result"
+    ]
+
+
+    st.divider()
+
+    st.subheader(
+        "📊 ATS Match Result"
+    )
+
+
+    score = result.get(
+        "match_score",
+        result.get(
+            "ats_score",
+            0,
+        ),
+    )
+
+
+    col1, col2, col3 = st.columns(3)
+
+
+    with col1:
+
+        st.metric(
+            "ATS Match Score",
+            f"{score}%",
+        )
+
+
+    matched = result.get(
+        "matched_skills",
+        [],
+    )
+
+
+    with col2:
+
+        st.metric(
+            "Matched Skills",
+            len(matched)
+            if isinstance(
+                matched,
+                list,
             )
-
-    with right:
-
-        section_header(
-            "⚠ Missing Keywords"
+            else 0,
         )
 
-        if result.get("missing"):
 
-            for item in result["missing"]:
+    missing = result.get(
+        "missing_skills",
+        [],
+    )
 
-                error_box(
-                    f"{item['category']} → {item['skill']}"
-                )
 
-        else:
+    with col3:
 
-            success_box(
-                "No major keyword gaps found."
+        st.metric(
+            "Missing Skills",
+            len(missing)
+            if isinstance(
+                missing,
+                list,
             )
+            else 0,
+        )
 
-    divider()
 
-    section_header(
-        "📝 AI Resume Improvement Recommendations"
+    st.divider()
+
+
+    st.subheader(
+        "✅ Matched Skills"
     )
 
-    recommendations = result.get(
-        "recommendations",
-        []
-    )
 
-    if recommendations:
+    if matched:
 
-        for recommendation in recommendations:
+        for skill in matched:
 
-            warning_box(
-                recommendation
+            st.success(
+                str(skill)
             )
 
     else:
 
-        success_box(
-            "Your resume already aligns strongly with this role."
+        st.info(
+            "No matched skills identified."
         )
 
-    divider()
 
-    with st.expander(
-        "📊 Complete ATS Analysis"
-    ):
-
-        st.json(
-            result
-        )
-
-else:
-
-    info_box(
-        "Please upload a PDF or DOCX resume and paste a job description to begin ATS analysis."
+    st.subheader(
+        "⚠️ Missing Skills"
     )
+
+
+    if missing:
+
+        for skill in missing:
+
+            st.warning(
+                str(skill)
+            )
+
+    else:
+
+        st.success(
+            "No significant missing skills identified."
+        )
+
+
+    recommended = result.get(
+        "recommended_keywords",
+        [],
+    )
+
+
+    if recommended:
+
+        st.subheader(
+            "🔑 Recommended ATS Keywords"
+        )
+
+        st.write(
+            ", ".join(
+                str(keyword)
+                for keyword in recommended
+            )
+        )
+
+
+    recommendations = result.get(
+        "recommendations",
+        [],
+    )
+
+
+    if recommendations:
+
+        st.subheader(
+            "💡 Recommendations"
+        )
+
+        for recommendation in recommendations:
+
+            st.write(
+                f"• {recommendation}"
+            )
+
+
+st.divider()
+
+
+st.success(
+    "✅ ATS Matcher Ready"
+)
