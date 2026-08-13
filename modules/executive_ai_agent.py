@@ -4,7 +4,9 @@ from modules.executive_scoring_engine import ExecutiveScoringEngine
 from modules.parallel_search_engine import ParallelSearchEngine
 from modules.job_cache import JobCache
 from modules.job_normalizer import JobNormalizer
-from modules.job_intelligence import JobIntelligence
+from modules.executive_job_ranking_engine import (
+    ExecutiveJobRankingEngine,
+)
 
 
 class ExecutiveAIAgent:
@@ -19,12 +21,13 @@ class ExecutiveAIAgent:
 
         self.scoring = ExecutiveScoringEngine()
 
+        self.ranking = ExecutiveJobRankingEngine()
+
         self.cache = JobCache()
 
-
-    # ==================================================
+    # --------------------------------------------------
     # PUBLIC SEARCH METHOD
-    # ==================================================
+    # --------------------------------------------------
 
     def search_jobs(
         self,
@@ -44,10 +47,9 @@ class ExecutiveAIAgent:
             selected_countries=selected_countries,
         )
 
-
-    # ==================================================
+    # --------------------------------------------------
     # SINGLE ROLE SEARCH
-    # ==================================================
+    # --------------------------------------------------
 
     def search_single_role(
         self,
@@ -60,16 +62,11 @@ class ExecutiveAIAgent:
 
         if cached_jobs:
 
-            jobs = JobNormalizer.normalize_many(
-                cached_jobs
-            )
-
-            return JobIntelligence.enrich(
-                JobIntelligence.deduplicate(
-                    jobs
+            return self.ranking.rank_jobs(
+                JobNormalizer.normalize_many(
+                    cached_jobs
                 )
             )
-
 
         jobs = self.engine.search_jobs(
             role
@@ -79,30 +76,21 @@ class ExecutiveAIAgent:
             jobs
         )
 
-
         if not jobs:
 
             return []
 
-
         processed_jobs = []
-
 
         for job in jobs:
 
             job["executive_role"] = role
-
-
-            # --------------------------------------------------
-            # EXECUTIVE SCORING
-            # --------------------------------------------------
 
             score_data = (
                 self.scoring.calculate_score(
                     job
                 )
             )
-
 
             executive_score = (
                 score_data.get(
@@ -111,16 +99,13 @@ class ExecutiveAIAgent:
                 )
             )
 
-
             job["executive_score"] = (
                 executive_score
             )
 
-
             job["score_details"] = (
                 score_data
             )
-
 
             job["priority"] = (
                 self.get_priority(
@@ -128,53 +113,36 @@ class ExecutiveAIAgent:
                 )
             )
 
-
             job["recommendation"] = (
                 self.get_recommendation(
                     executive_score
                 )
             )
 
-
             processed_jobs.append(
                 job
             )
 
-
         # --------------------------------------------------
-        # JOB INTELLIGENCE
+        # FINAL EXECUTIVE RANKING
         # --------------------------------------------------
 
-        processed_jobs = (
-            JobIntelligence.deduplicate(
+        ranked_jobs = (
+            self.ranking.rank_jobs(
                 processed_jobs
             )
         )
-
-
-        processed_jobs = (
-            JobIntelligence.enrich(
-                processed_jobs
-            )
-        )
-
-
-        # --------------------------------------------------
-        # SAVE CACHE
-        # --------------------------------------------------
 
         self.cache.save_jobs(
             role,
-            processed_jobs
+            ranked_jobs
         )
 
+        return ranked_jobs
 
-        return processed_jobs
-
-
-    # ==================================================
+    # --------------------------------------------------
     # ALL ROLES SEARCH
-    # ==================================================
+    # --------------------------------------------------
 
     def search_all_roles(
         self,
@@ -186,32 +154,17 @@ class ExecutiveAIAgent:
             "ALL_EXECUTIVE_JOBS"
         )
 
-
         cached = self.cache.get_jobs(
             cache_key
         )
 
-
         if cached:
 
-            jobs = (
+            return self.ranking.rank_jobs(
                 JobNormalizer.normalize_many(
                     cached
                 )
             )
-
-
-            jobs = (
-                JobIntelligence.deduplicate(
-                    jobs
-                )
-            )
-
-
-            return JobIntelligence.enrich(
-                jobs
-            )
-
 
         if max_roles is None:
 
@@ -223,7 +176,6 @@ class ExecutiveAIAgent:
                 :max_roles
             ]
 
-
         jobs = (
             self.parallel_engine.search_roles(
                 roles,
@@ -231,32 +183,23 @@ class ExecutiveAIAgent:
             )
         )
 
-
         jobs = JobNormalizer.normalize_many(
             jobs
         )
-
 
         if not jobs:
 
             return []
 
-
         executive_jobs = []
 
-
         for job in jobs:
-
-            # --------------------------------------------------
-            # EXECUTIVE SCORING
-            # --------------------------------------------------
 
             score_data = (
                 self.scoring.calculate_score(
                     job
                 )
             )
-
 
             executive_score = (
                 score_data.get(
@@ -265,16 +208,13 @@ class ExecutiveAIAgent:
                 )
             )
 
-
             job["executive_score"] = (
                 executive_score
             )
 
-
             job["score_details"] = (
                 score_data
             )
-
 
             job["priority"] = (
                 self.get_priority(
@@ -282,77 +222,39 @@ class ExecutiveAIAgent:
                 )
             )
 
-
             job["recommendation"] = (
                 self.get_recommendation(
                     executive_score
                 )
             )
 
-
             executive_jobs.append(
                 job
             )
 
-
         # --------------------------------------------------
-        # REMOVE DUPLICATES
+        # FINAL EXECUTIVE RANKING
         # --------------------------------------------------
 
-        executive_jobs = (
-            JobIntelligence.deduplicate(
+        ranked_jobs = (
+            self.ranking.rank_jobs(
                 executive_jobs
             )
         )
-
-
-        # --------------------------------------------------
-        # ENRICH JOBS
-        # --------------------------------------------------
-
-        executive_jobs = (
-            JobIntelligence.enrich(
-                executive_jobs
-            )
-        )
-
-
-        # --------------------------------------------------
-        # SORT BY INTELLIGENCE SCORE
-        # --------------------------------------------------
-
-        executive_jobs = sorted(
-            executive_jobs,
-            key=lambda job:
-                float(
-                    job.get(
-                        "intelligence_score",
-                        0,
-                    )
-                ),
-            reverse=True,
-        )
-
-
-        # --------------------------------------------------
-        # SAVE CACHE
-        # --------------------------------------------------
 
         self.cache.save_jobs(
             cache_key,
-            executive_jobs,
+            ranked_jobs,
         )
 
+        return ranked_jobs
 
-        return executive_jobs
-
-
-    # ==================================================
+    # --------------------------------------------------
     # PRIORITY
-    # ==================================================
+    # --------------------------------------------------
 
+    @staticmethod
     def get_priority(
-        self,
         score,
     ):
 
@@ -360,26 +262,22 @@ class ExecutiveAIAgent:
 
             return "Critical"
 
-
         if score >= 80:
 
             return "High"
-
 
         if score >= 70:
 
             return "Medium"
 
-
         return "Low"
 
-
-    # ==================================================
+    # --------------------------------------------------
     # RECOMMENDATION
-    # ==================================================
+    # --------------------------------------------------
 
+    @staticmethod
     def get_recommendation(
-        self,
         score,
     ):
 
@@ -387,26 +285,85 @@ class ExecutiveAIAgent:
 
             return "Strongly Recommended"
 
-
         if score >= 80:
 
             return "Recommended"
-
 
         if score >= 70:
 
             return "Consider"
 
-
         return "Low Priority"
 
-
-    # ==================================================
+    # --------------------------------------------------
     # CLEAR CACHE
-    # ==================================================
+    # --------------------------------------------------
 
     def clear_cache(
         self,
     ):
 
         self.cache.clear_cache()
+
+
+# ------------------------------------------------------
+# DIRECT TEST
+# ------------------------------------------------------
+
+if __name__ == "__main__":
+
+    agent = ExecutiveAIAgent()
+
+    jobs = agent.search_jobs(
+        role="Head of Sales"
+    )
+
+    print(
+        "LIVE JOBS:",
+        len(jobs)
+    )
+
+    print(
+        "TOP 10:"
+    )
+
+    for job in jobs[:10]:
+
+        print(
+            job.get(
+                "ranking_position"
+            ),
+            "|",
+            job.get(
+                "title",
+                job.get(
+                    "role",
+                    ""
+                )
+            ),
+            "|",
+            job.get(
+                "company",
+                ""
+            ),
+            "|",
+            job.get(
+                "country",
+                ""
+            ),
+            "| Exec:",
+            job.get(
+                "executive_score",
+                0
+            ),
+            "| Rank:",
+            job.get(
+                "ranking_score",
+                0
+            ),
+            "|",
+            job.get(
+                "ranking_priority",
+                ""
+            ),
+        )
