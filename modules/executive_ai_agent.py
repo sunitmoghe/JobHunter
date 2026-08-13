@@ -4,6 +4,7 @@ from modules.executive_scoring_engine import ExecutiveScoringEngine
 from modules.parallel_search_engine import ParallelSearchEngine
 from modules.job_cache import JobCache
 from modules.job_normalizer import JobNormalizer
+from modules.job_intelligence import JobIntelligence
 
 
 class ExecutiveAIAgent:
@@ -21,9 +22,9 @@ class ExecutiveAIAgent:
         self.cache = JobCache()
 
 
-    # --------------------------------------------------
+    # ==================================================
     # PUBLIC SEARCH METHOD
-    # --------------------------------------------------
+    # ==================================================
 
     def search_jobs(
         self,
@@ -44,9 +45,9 @@ class ExecutiveAIAgent:
         )
 
 
-    # --------------------------------------------------
+    # ==================================================
     # SINGLE ROLE SEARCH
-    # --------------------------------------------------
+    # ==================================================
 
     def search_single_role(
         self,
@@ -59,8 +60,14 @@ class ExecutiveAIAgent:
 
         if cached_jobs:
 
-            return JobNormalizer.normalize_many(
+            jobs = JobNormalizer.normalize_many(
                 cached_jobs
+            )
+
+            return JobIntelligence.enrich(
+                JobIntelligence.deduplicate(
+                    jobs
+                )
             )
 
 
@@ -85,6 +92,10 @@ class ExecutiveAIAgent:
 
             job["executive_role"] = role
 
+
+            # --------------------------------------------------
+            # EXECUTIVE SCORING
+            # --------------------------------------------------
 
             score_data = (
                 self.scoring.calculate_score(
@@ -130,6 +141,28 @@ class ExecutiveAIAgent:
             )
 
 
+        # --------------------------------------------------
+        # JOB INTELLIGENCE
+        # --------------------------------------------------
+
+        processed_jobs = (
+            JobIntelligence.deduplicate(
+                processed_jobs
+            )
+        )
+
+
+        processed_jobs = (
+            JobIntelligence.enrich(
+                processed_jobs
+            )
+        )
+
+
+        # --------------------------------------------------
+        # SAVE CACHE
+        # --------------------------------------------------
+
         self.cache.save_jobs(
             role,
             processed_jobs
@@ -139,9 +172,9 @@ class ExecutiveAIAgent:
         return processed_jobs
 
 
-    # --------------------------------------------------
+    # ==================================================
     # ALL ROLES SEARCH
-    # --------------------------------------------------
+    # ==================================================
 
     def search_all_roles(
         self,
@@ -161,8 +194,22 @@ class ExecutiveAIAgent:
 
         if cached:
 
-            return JobNormalizer.normalize_many(
-                cached
+            jobs = (
+                JobNormalizer.normalize_many(
+                    cached
+                )
+            )
+
+
+            jobs = (
+                JobIntelligence.deduplicate(
+                    jobs
+                )
+            )
+
+
+            return JobIntelligence.enrich(
+                jobs
             )
 
 
@@ -199,6 +246,10 @@ class ExecutiveAIAgent:
 
 
         for job in jobs:
+
+            # --------------------------------------------------
+            # EXECUTIVE SCORING
+            # --------------------------------------------------
 
             score_data = (
                 self.scoring.calculate_score(
@@ -244,14 +295,48 @@ class ExecutiveAIAgent:
             )
 
 
-        executive_jobs.sort(
-            key=lambda x: x.get(
-                "executive_score",
-                0,
-            ),
+        # --------------------------------------------------
+        # REMOVE DUPLICATES
+        # --------------------------------------------------
+
+        executive_jobs = (
+            JobIntelligence.deduplicate(
+                executive_jobs
+            )
+        )
+
+
+        # --------------------------------------------------
+        # ENRICH JOBS
+        # --------------------------------------------------
+
+        executive_jobs = (
+            JobIntelligence.enrich(
+                executive_jobs
+            )
+        )
+
+
+        # --------------------------------------------------
+        # SORT BY INTELLIGENCE SCORE
+        # --------------------------------------------------
+
+        executive_jobs = sorted(
+            executive_jobs,
+            key=lambda job:
+                float(
+                    job.get(
+                        "intelligence_score",
+                        0,
+                    )
+                ),
             reverse=True,
         )
 
+
+        # --------------------------------------------------
+        # SAVE CACHE
+        # --------------------------------------------------
 
         self.cache.save_jobs(
             cache_key,
@@ -262,9 +347,9 @@ class ExecutiveAIAgent:
         return executive_jobs
 
 
-    # --------------------------------------------------
+    # ==================================================
     # PRIORITY
-    # --------------------------------------------------
+    # ==================================================
 
     def get_priority(
         self,
@@ -289,9 +374,9 @@ class ExecutiveAIAgent:
         return "Low"
 
 
-    # --------------------------------------------------
+    # ==================================================
     # RECOMMENDATION
-    # --------------------------------------------------
+    # ==================================================
 
     def get_recommendation(
         self,
@@ -316,9 +401,9 @@ class ExecutiveAIAgent:
         return "Low Priority"
 
 
-    # --------------------------------------------------
+    # ==================================================
     # CLEAR CACHE
-    # --------------------------------------------------
+    # ==================================================
 
     def clear_cache(
         self,
