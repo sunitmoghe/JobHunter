@@ -37,3 +37,14 @@ database/job_cache.json
 database/saved_jobs.json
 data/*.pdf
 data/executive_profile.json
+
+# -----------------------------
+# Secrets
+# -----------------------------
+.env
+
+# -----------------------------
+# Personal Resume Library
+# -----------------------------
+data/resume_library.json
+data/resume_library/
