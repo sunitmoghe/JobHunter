@@ -1,6 +1,6 @@
 import streamlit as st
 
-from modules.application_manager import ApplicationManager
+from modules.application_tracker import ApplicationTracker
 
 
 st.set_page_config(
@@ -10,26 +10,63 @@ st.set_page_config(
 )
 
 
-st.title(
-    "📌 Applications Tracker"
-)
+st.title("📌 Executive Applications Tracker")
 
 st.caption(
-    "Track and manage your executive job applications."
+    "Track, manage and monitor your executive job applications."
 )
 
 
-manager = ApplicationManager()
+tracker = ApplicationTracker()
 
-applications = (
-    manager.get_all_applications()
-)
+applications = tracker.get_applications()
 
 
-st.subheader(
-    f"📊 Applications: {len(applications)}"
-)
+# --------------------------------------------------
+# HEADER METRICS
+# --------------------------------------------------
 
+stats = tracker.statistics()
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.metric(
+        "Total",
+        stats["total"],
+    )
+
+with col2:
+    st.metric(
+        "Applied",
+        stats["applied"],
+    )
+
+with col3:
+    st.metric(
+        "Interview",
+        stats["interview"],
+    )
+
+with col4:
+    st.metric(
+        "Offer",
+        stats["offer"],
+    )
+
+with col5:
+    st.metric(
+        "Rejected",
+        stats["rejected"],
+    )
+
+
+st.divider()
+
+
+# --------------------------------------------------
+# APPLICATION LIST
+# --------------------------------------------------
 
 if not applications:
 
@@ -39,25 +76,29 @@ if not applications:
 
 else:
 
+    st.subheader(
+        f"📊 Applications: {len(applications)}"
+    )
+
+
     for index, application in enumerate(
         applications,
         start=1,
     ):
 
-        title = application.get(
-            "job_title",
-            application.get(
-                "title",
-                application.get(
-                    "role",
-                    "Executive Position",
-                ),
-            ),
+        role = application.get(
+            "role",
+            "Executive Position",
         )
 
         company = application.get(
             "company",
             "Company",
+        )
+
+        country = application.get(
+            "country",
+            "",
         )
 
         location = application.get(
@@ -70,13 +111,38 @@ else:
             "Applied",
         )
 
-        applied_on = application.get(
-            "applied_on",
+        application_id = application.get(
+            "application_id",
             "",
         )
 
-        apply_link = application.get(
-            "apply_link",
+        application_date = application.get(
+            "application_date",
+            "",
+        )
+
+        last_updated = application.get(
+            "last_updated",
+            "",
+        )
+
+        priority_score = application.get(
+            "priority_score",
+            0,
+        )
+
+        executive_score = application.get(
+            "executive_score",
+            0,
+        )
+
+        recruiter = application.get(
+            "recruiter",
+            "",
+        )
+
+        notes = application.get(
+            "notes",
             "",
         )
 
@@ -86,92 +152,182 @@ else:
         ):
 
             st.markdown(
-                f"### {index}. {title}"
+                f"### {index}. {role}"
             )
 
             st.write(
                 f"**Company:** {company}"
             )
 
-            if location:
+            location_text = " | ".join(
+                value
+                for value in [
+                    location,
+                    country,
+                ]
+                if value
+            )
+
+            if location_text:
 
                 st.write(
-                    f"**Location:** {location}"
+                    f"**Location:** {location_text}"
                 )
 
 
-            col1, col2, col3 = st.columns(
-                3
-            )
+            col1, col2, col3 = st.columns(3)
 
+
+            # --------------------------------------------------
+            # STATUS
+            # --------------------------------------------------
 
             with col1:
 
-                new_status = st.selectbox(
-                    "Status",
-                    [
-                        "Applied",
-                        "Interview",
-                        "Offer",
-                        "Rejected",
-                        "Withdrawn",
-                    ],
-                    index=[
-                        "Applied",
-                        "Interview",
-                        "Offer",
-                        "Rejected",
-                        "Withdrawn",
-                    ].index(
-                        status
-                    )
-                    if status
-                    in [
-                        "Applied",
-                        "Interview",
-                        "Offer",
-                        "Rejected",
-                        "Withdrawn",
-                    ]
-                    else 0,
-                    key=f"status_{index}",
+                statuses = [
+                    "Applied",
+                    "Interview",
+                    "Offer",
+                    "Rejected",
+                    "Withdrawn",
+                ]
+
+                current_index = (
+                    statuses.index(status)
+                    if status in statuses
+                    else 0
                 )
 
+                new_status = st.selectbox(
+                    "Status",
+                    statuses,
+                    index=current_index,
+                    key=f"application_status_{application_id}_{index}",
+                )
+
+
+            # --------------------------------------------------
+            # SCORES
+            # --------------------------------------------------
 
             with col2:
 
                 st.write(
-                    "**Applied On:**"
+                    f"**Executive Score:** {executive_score}"
                 )
 
                 st.write(
-                    applied_on
+                    f"**Priority Score:** {priority_score}"
                 )
 
 
+            # --------------------------------------------------
+            # DATE
+            # --------------------------------------------------
+
             with col3:
 
-                if apply_link:
+                st.write(
+                    "**Applied:**"
+                )
 
-                    st.link_button(
-                        "🔗 Open Job",
-                        apply_link,
-                        use_container_width=True,
-                    )
+                st.write(
+                    application_date
+                )
 
+                st.write(
+                    "**Updated:**"
+                )
+
+                st.write(
+                    last_updated
+                )
+
+
+            # --------------------------------------------------
+            # STATUS UPDATE
+            # --------------------------------------------------
 
             if new_status != status:
 
-                if manager.update_status(
-                    index - 1,
+                if tracker.update_status(
+                    application_id,
                     new_status,
                 ):
 
                     st.success(
-                        f"Status updated to {new_status}."
+                        f"Application status updated to {new_status}."
                     )
 
                     st.rerun()
 
+                else:
 
-            st.divider()
+                    st.error(
+                        "Unable to update application status."
+                    )
+
+
+            # --------------------------------------------------
+            # RECRUITER
+            # --------------------------------------------------
+
+            if recruiter:
+
+                st.write(
+                    f"**Recruiter:** {recruiter}"
+                )
+
+
+            # --------------------------------------------------
+            # NOTES
+            # --------------------------------------------------
+
+            if notes:
+
+                with st.expander(
+                    "📝 Notes"
+                ):
+
+                    st.write(
+                        notes
+                    )
+
+
+            # --------------------------------------------------
+            # APPLICATION HISTORY
+            # --------------------------------------------------
+
+            history = application.get(
+                "history",
+                [],
+            )
+
+            if history:
+
+                with st.expander(
+                    "📜 Application History"
+                ):
+
+                    for event in reversed(
+                        history
+                    ):
+
+                        event_date = event.get(
+                            "date",
+                            "",
+                        )
+
+                        event_status = event.get(
+                            "status",
+                            "",
+                        )
+
+                        st.write(
+                            f"**{event_date}** — {event_status}"
+                        )
+
+
+            st.caption(
+                f"Application ID: {application_id}"
+            )

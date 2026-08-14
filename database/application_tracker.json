@@ -51,12 +51,12 @@
         "role": "Director / Vice President / Senior Vice President Business Development – United Kingdom (gn)",
         "country": "DE",
         "location": "Planegg, München (Kreis)",
-        "status": "Applied",
+        "status": "Interview",
         "priority_score": 54.1,
         "executive_score": 72.91,
         "jobhunter_score": 54.1,
         "application_date": "2026-08-06",
-        "last_updated": "2026-08-06 22:20",
+        "last_updated": "2026-08-14 09:30",
         "interview_date": "",
         "follow_up_date": "",
         "offer_date": "",
@@ -66,6 +66,10 @@
             {
                 "date": "2026-08-06 22:20",
                 "status": "Applied"
+            },
+            {
+                "date": "2026-08-14 09:30",
+                "status": "Interview"
             }
         ]
     },
@@ -113,6 +117,30 @@
         "history": [
             {
                 "date": "2026-08-06 22:47",
+                "status": "Applied"
+            }
+        ]
+    },
+    {
+        "application_id": "c11175a3-4f1e-4689-bdc4-7c456e019112",
+        "company": "Talent Titans Pte Ltd",
+        "role": "Head of Sales",
+        "country": "SG",
+        "location": "Singapore",
+        "status": "Applied",
+        "priority_score": 0,
+        "executive_score": 68.29,
+        "jobhunter_score": 0,
+        "application_date": "2026-08-14",
+        "last_updated": "2026-08-14 09:44",
+        "interview_date": "",
+        "follow_up_date": "",
+        "offer_date": "",
+        "recruiter": "",
+        "notes": "",
+        "history": [
+            {
+                "date": "2026-08-14 09:44",
                 "status": "Applied"
             }
         ]

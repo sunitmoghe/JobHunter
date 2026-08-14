@@ -26,19 +26,37 @@ class ApplicationManager:
             self.file_path
         ):
 
-            with open(
-                self.file_path,
-                "w",
-                encoding="utf-8",
-            ) as file:
+            self._save([])
 
-                json.dump(
-                    [],
-                    file,
-                    indent=4,
-                )
+    # ==========================================================
+    # INTERNAL STORAGE
+    # ==========================================================
 
-    def get_all_applications(self):
+    def _save(
+        self,
+        applications,
+    ):
+
+        with open(
+            self.file_path,
+            "w",
+            encoding="utf-8",
+        ) as file:
+
+            json.dump(
+                applications,
+                file,
+                indent=4,
+                ensure_ascii=False,
+            )
+
+    # ==========================================================
+    # GET APPLICATIONS
+    # ==========================================================
+
+    def get_all_applications(
+        self,
+    ):
 
         try:
 
@@ -62,6 +80,10 @@ class ApplicationManager:
             pass
 
         return []
+
+    # ==========================================================
+    # ADD APPLICATION
+    # ==========================================================
 
     def add_application(
         self,
@@ -103,9 +125,13 @@ class ApplicationManager:
         else:
 
             application = {
+
                 "role": role or "",
+
                 "country": country or "",
+
                 "location": location or "",
+
             }
 
         application["job_title"] = (
@@ -118,7 +144,9 @@ class ApplicationManager:
             )
         )
 
-        application["role"] = role or ""
+        application["role"] = (
+            role or ""
+        )
 
         application["country"] = (
             country or ""
@@ -128,7 +156,9 @@ class ApplicationManager:
             location or ""
         )
 
-        application["status"] = "Applied"
+        application["status"] = (
+            "Applied"
+        )
 
         application["applied_on"] = (
             datetime.now().strftime(
@@ -136,21 +166,212 @@ class ApplicationManager:
             )
         )
 
+        application["last_updated"] = (
+            datetime.now().strftime(
+                "%d-%m-%Y %H:%M"
+            )
+        )
+
+        application.setdefault(
+            "history",
+            [],
+        )
+
+        application["history"].append(
+            {
+                "date":
+                    datetime.now().strftime(
+                        "%d-%m-%Y %H:%M"
+                    ),
+
+                "status":
+                    "Applied",
+            }
+        )
+
         applications.append(
             application
         )
 
-        with open(
-            self.file_path,
-            "w",
-            encoding="utf-8",
-        ) as file:
-
-            json.dump(
-                applications,
-                file,
-                indent=4,
-                ensure_ascii=False,
-            )
+        self._save(
+            applications
+        )
 
         return True
+
+    # ==========================================================
+    # UPDATE STATUS
+    # ==========================================================
+
+    def update_status(
+        self,
+        application_index,
+        new_status,
+    ):
+
+        applications = (
+            self.get_all_applications()
+        )
+
+        if not applications:
+
+            return False
+
+        if not isinstance(
+            application_index,
+            int,
+        ):
+
+            return False
+
+        if (
+            application_index < 0
+            or
+            application_index >= len(
+                applications
+            )
+        ):
+
+            return False
+
+        valid_statuses = [
+
+            "Applied",
+            "Interview",
+            "Offer",
+            "Rejected",
+            "Withdrawn",
+
+        ]
+
+        if new_status not in valid_statuses:
+
+            return False
+
+        application = applications[
+            application_index
+        ]
+
+        now = datetime.now().strftime(
+            "%d-%m-%Y %H:%M"
+        )
+
+        application["status"] = (
+            new_status
+        )
+
+        application["last_updated"] = (
+            now
+        )
+
+        application.setdefault(
+            "history",
+            [],
+        )
+
+        application["history"].append(
+            {
+                "date": now,
+                "status": new_status,
+            }
+        )
+
+        self._save(
+            applications
+        )
+
+        return True
+
+    # ==========================================================
+    # APPLICATION STATISTICS
+    # ==========================================================
+
+    def get_statistics(
+        self,
+    ):
+
+        applications = (
+            self.get_all_applications()
+        )
+
+        statistics = {
+
+            "total": len(
+                applications
+            ),
+
+            "applied": 0,
+
+            "interview": 0,
+
+            "offer": 0,
+
+            "rejected": 0,
+
+            "withdrawn": 0,
+
+        }
+
+        for application in applications:
+
+            status = application.get(
+                "status",
+                "",
+            ).lower()
+
+            if status == "applied":
+
+                statistics[
+                    "applied"
+                ] += 1
+
+            elif status == "interview":
+
+                statistics[
+                    "interview"
+                ] += 1
+
+            elif status == "offer":
+
+                statistics[
+                    "offer"
+                ] += 1
+
+            elif status == "rejected":
+
+                statistics[
+                    "rejected"
+                ] += 1
+
+            elif status == "withdrawn":
+
+                statistics[
+                    "withdrawn"
+                ] += 1
+
+        return statistics
+
+
+# ==========================================================
+# DIRECT TEST
+# ==========================================================
+
+if __name__ == "__main__":
+
+    manager = ApplicationManager()
+
+    print(
+        "ApplicationManager: OK"
+    )
+
+    print(
+        "Applications:",
+        len(
+            manager.get_all_applications()
+        )
+    )
+
+    print(
+        "Statistics:",
+        manager.get_statistics()
+    )

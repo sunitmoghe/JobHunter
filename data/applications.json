@@ -37,7 +37,18 @@
         "recommendation": "Low Priority",
         "job_title": "Head of Sales",
         "status": "Applied",
-        "applied_on": "12-08-2026"
+        "applied_on": "12-08-2026",
+        "last_updated": "13-08-2026 21:56",
+        "history": [
+            {
+                "date": "13-08-2026 21:54",
+                "status": "Interview"
+            },
+            {
+                "date": "13-08-2026 21:56",
+                "status": "Applied"
+            }
+        ]
     },
     {
         "role": "Head of Sales",
